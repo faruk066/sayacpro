@@ -8,6 +8,7 @@ class MeterCard extends StatelessWidget {
   final String isiEndeks;
   final String suEndeks;
   final bool isSuccess;
+  final String? adSoyad;
 
   const MeterCard({
     super.key,
@@ -15,6 +16,7 @@ class MeterCard extends StatelessWidget {
     required this.isiEndeks,
     required this.suEndeks,
     this.isSuccess = true,
+    this.adSoyad,
   });
 
   @override
@@ -64,13 +66,26 @@ class MeterCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.apartment, color: textMuted, size: 20),
                   const SizedBox(width: 8),
-                  Text(
-                    "Daire $daireNo",
-                    style: const TextStyle(
-                      color: textMain,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Daire $daireNo",
+                        style: const TextStyle(
+                          color: textMain,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (adSoyad != null && adSoyad!.isNotEmpty)
+                        Text(
+                          adSoyad!,
+                          style: const TextStyle(
+                            color: textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),

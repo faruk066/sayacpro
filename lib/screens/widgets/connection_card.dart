@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../providers/device_provider.dart';
+import '../../providers/app_data_provider.dart';
 import '../../theme/app_theme.dart';
 
 class ConnectionCard extends StatelessWidget {
@@ -134,17 +136,22 @@ class ConnectionCard extends StatelessWidget {
                         child: _buildSettingField(
                           context: context,
                           label: 'Okuma Modu',
-                          child: _buildMiniDropdown<ReadingMode>(
-                            context: context,
-                            value: provider.selectedReadingMode,
-                            items: const [
-                              DropdownMenuItem(value: ReadingMode.heat, child: Text('Sadece Isı')),
-                              DropdownMenuItem(value: ReadingMode.water, child: Text('Sadece Su')),
-                              DropdownMenuItem(value: ReadingMode.both, child: Text('Her İkisi')),
-                            ],
-                            onChanged: provider.isReading
-                                ? null
-                                : (v) { if (v != null) provider.setReadingMode(v); },
+                          child: Selector<AppDataProvider, ReadingMode>(
+                            selector: (_, p) => p.selectedReadingMode,
+                            builder: (context, readingMode, _) {
+                              return _buildMiniDropdown<ReadingMode>(
+                                context: context,
+                                value: readingMode,
+                                items: const [
+                                  DropdownMenuItem(value: ReadingMode.heat, child: Text('Sadece Isı')),
+                                  DropdownMenuItem(value: ReadingMode.water, child: Text('Sadece Su')),
+                                  DropdownMenuItem(value: ReadingMode.both, child: Text('Her İkisi')),
+                                ],
+                                onChanged: provider.isReading
+                                    ? null
+                                    : (v) { if (v != null) provider.setReadingMode(v); },
+                              );
+                            }
                           ),
                         ),
                       ),
