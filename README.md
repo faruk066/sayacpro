@@ -52,18 +52,21 @@ Düşük seviyeli donanım haberleşmesini (RS485/M-Bus), yüksek seviyeli Cloud
 
 ## 📦 Kurulum ve Başlangıç
 
-1. Projeyi klonlayın: 
-git clone [https://github.com/faruk066/sayacpro.git]
+1. Projeyi klonlayın:
+   ```bash
+   git clone https://github.com/faruk066/sayacpro.git
+
 2. Gerekli paketleri indirin:
-Bash
-flutter pub get
+   ```bash
+   flutter pub get
+
 3. Firebase entegrasyonu için FlutterFire CLI ile projenizi bağlayın:
-Bash
-flutterfire configure
+   ```bash
+   flutterfire configure
+
 4. Uygulamayı çalıştırın:
-
-Mobil (Donanım Modu): flutter run -d android
-
-Web Dashboard (Canlı İzleme Modu): flutter run -d chrome
+   ```bash
+   Mobil (Donanım Modu): flutter run -d android
+   Web Dashboard (Canlı İzleme Modu): flutter run -d chrome
 
 
