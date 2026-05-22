@@ -578,41 +578,13 @@ class DeviceProvider extends ChangeNotifier {
 
         if (bytes == null) return false;
 
-        var excel = excel_pkg.Excel.decodeBytes(bytes);
-        var sheet = excel.tables.values.first; // İlk sayfayı al (Sheet1 olması bekleniyor)
+        final parsedData = await compute(_parseExcelBytes, bytes);
 
-        List<String> daireList = [];
-        List<String> heatList = [];
-        List<String> waterList = [];
-
-        // 1. satırı (başlık) atla
-        for (var i = 1; i < sheet.maxRows; i++) {
-          var row = sheet.rows[i];
-          if (row.isEmpty) continue;
-          
-          // STRICT CHECK: Skip empty/ghost rows if "Daire No" (Column 0) is empty or missing
-          if (row[0] == null || row[0]?.value == null || row[0]!.value.toString().trim().isEmpty) {
-            continue;
-          }
-          
-          // Değerleri temiz bir şekilde alalım
-          String daire = _extractRawValue(row[0]?.value);
-          String heat = _extractRawValue(row.length > 1 ? row[1]?.value : null);
-          String water = _extractRawValue(row.length > 2 ? row[2]?.value : null);
-
-          if (heat.isEmpty) heat = "Seri No Bulunamadı";
-          if (water.isEmpty) water = "Seri No Bulunamadı";
-
-          daireList.add(daire);
-          heatList.add(heat);
-          waterList.add(water);
-        }
-
-        _daireIds = daireList.join("\n");
-        _heatSecondaryIds = heatList.join("\n");
-        _waterSecondaryIds = waterList.join("\n");
+        _daireIds = parsedData.daireList.join("\n");
+        _heatSecondaryIds = parsedData.heatList.join("\n");
+        _waterSecondaryIds = parsedData.waterList.join("\n");
         
-        _addLog("✅ Excel'den ${daireList.length} satır içe aktarıldı.");
+        _addLog("✅ Excel'den ${parsedData.daireList.length} satır içe aktarıldı.");
         saveSession(immediate: true);
         notifyListeners();
         return true;
@@ -624,24 +596,6 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  /// Excel hücresindeki değeri temiz bir string olarak döndürür (Güvenli Ayrıştırma)
-  String _extractRawValue(dynamic cell) {
-    if (cell == null) return "";
-    
-    // Unwrap the excel package cell value objects
-    if (cell is excel_pkg.TextCellValue) return cell.value.toString().trim();
-    if (cell is excel_pkg.IntCellValue) return cell.value.toString().trim();
-    if (cell is excel_pkg.DoubleCellValue) {
-      double d = (cell as dynamic).value;
-      if (d == d.toInt().toDouble()) {
-        return d.toInt().toString();
-      }
-      return cell.value.toString().trim();
-    }
-    
-    // Fallback for older versions or other types
-    return cell.toString().trim();
-  }
 
   Future<bool> _readSingleSecondary(String targetSerial) async {
     _rxBuffer.clear();
@@ -862,82 +816,105 @@ class DeviceProvider extends ChangeNotifier {
         continue;
       }
 
-      // 2. İlk eleman 0x68 ise, 2. eleman bize verinin uzunluğunu (L) verir.
-      if (_rxBuffer.length < 2) {
-        // L değerini okuyacak kadar veri yok, bekle
+      // 2. İlk eleman 0x68 ise, 2. ve 3. elemanlar (L1, L2) uzunluk bilgisini içerir.
+      if (_rxBuffer.length < 4) {
+        // L ve 2. 0x68 değerini okuyacak kadar veri yok, bekle
         break;
       }
 
-      final L = _rxBuffer[1];
+      final l1 = _rxBuffer[1];
+      final l2 = _rxBuffer[2];
       
+      // M-Bus kuralları: L1 ve L2 eşit olmalı, ve 4. byte 0x68 olmalı
+      if (l1 != l2 || _rxBuffer[3] != 0x68) {
+        // Hatalı başlangıç, ilk byte'ı atla ve aramaya devam et
+        _addLog('⚠️ Hatalı Başlangıç Çerçevesi (l1 != l2 veya eksik 0x68). Kaydırılıyor...');
+        _rxBuffer.removeAt(0);
+        continue;
+      }
+
       // 3. Tam bir M-Bus paketinin uzunluğu: L + 6 byte'tır.
-      final totalLength = L + 6;
+      final totalLength = l1 + 6;
 
       // 4. Eğer _rxBuffer.length >= totalLength ise, elimizde tam bir paket var demektir!
       if (_rxBuffer.length >= totalLength) {
         // Paketin son baytı 0x16 olmalıdır
         if (_rxBuffer[totalLength - 1] == 0x16) {
-          final frameBytes = Uint8List.fromList(_rxBuffer.sublist(0, totalLength));
-          _addLog('📥 Tam Paket: ${_toHexString(frameBytes)}');
           
-          try {
-            final meterData = MBusParser.parseData(
-              frameBytes, 
-              isWaterMeter: _selectedMeterType == MeterType.water
-            );
-            if (meterData != null) {
-              final flatNo = _expectedDaireNo[meterData.meterId]?.toString() ?? '';
-              
-              if (_meters.containsKey(flatNo)) {
-                final existing = _meters[flatNo]!;
-                if (_selectedMeterType == MeterType.heat) {
-                  existing.heatIndex = _formatHeatIndex(meterData.energy);
-                  existing.heatMeterId = meterData.meterId;
-                  existing.heatStatus = MeterStatus.success;
-                } else {
-                  existing.waterIndex = _formatWaterIndex(meterData.volume);
-                  existing.waterMeterId = meterData.meterId;
-                  existing.waterStatus = MeterStatus.success;
-                }
-                
-                // Genel durumu güncelle: Her iki sayaç da başarılıysa success, aksi halde bekliyor/hata
-                if (existing.heatStatus == MeterStatus.success && existing.waterStatus == MeterStatus.success) {
-                  existing.overallStatus = MeterStatus.success;
-                } else if (existing.heatStatus == MeterStatus.failed || existing.waterStatus == MeterStatus.failed) {
-                  existing.overallStatus = MeterStatus.failed;
-                }
-                
-                existing.readTime = DateTime.now();
-              } else {
-                _meters[flatNo] = MeterData(
-                  flatNo: flatNo,
-                  heatMeterId: _selectedMeterType == MeterType.heat ? meterData.meterId : '',
-                  heatIndex: _selectedMeterType == MeterType.heat ? _formatHeatIndex(meterData.energy) : '0.0',
-                  heatStatus: _selectedMeterType == MeterType.heat ? MeterStatus.success : MeterStatus.pending,
-                  waterMeterId: _selectedMeterType == MeterType.water ? meterData.meterId : '',
-                  waterIndex: _selectedMeterType == MeterType.water ? _formatWaterIndex(meterData.volume) : '0.0',
-                  waterStatus: _selectedMeterType == MeterType.water ? MeterStatus.success : MeterStatus.pending,
-                  overallStatus: MeterStatus.pending, // Henüz tek sayaç okundu
-                  type: _selectedMeterType,
-                  readTime: DateTime.now(),
-                );
-              }
+          // CRC Kontrolü: 4. indexten totalLength - 2 indexine kadar olan baytların toplamı modulo 256
+          int cs = 0;
+          for (int i = 4; i < totalLength - 2; i++) {
+            cs = (cs + _rxBuffer[i]) % 256;
+          }
 
-              _addLog('🔍 Sayaç parse edildi → ID: ${meterData.meterId}');
-              hasChanges = true;
-              
-              if (_readCompleter != null && !_readCompleter!.isCompleted) {
-                _readCompleter!.complete(true);
+          if (cs == _rxBuffer[totalLength - 2]) {
+             final frameBytes = Uint8List.fromList(_rxBuffer.sublist(0, totalLength));
+            _addLog('📥 Tam Paket (CRC OK): ${_toHexString(frameBytes)}');
+
+            try {
+              final meterData = MBusParser.parseData(
+                frameBytes,
+                isWaterMeter: _selectedMeterType == MeterType.water
+              );
+              if (meterData != null) {
+                final flatNo = _expectedDaireNo[meterData.meterId]?.toString() ?? '';
+
+                if (_meters.containsKey(flatNo)) {
+                  final existing = _meters[flatNo]!;
+                  if (_selectedMeterType == MeterType.heat) {
+                    existing.heatIndex = _formatHeatIndex(meterData.energy);
+                    existing.heatMeterId = meterData.meterId;
+                    existing.heatStatus = MeterStatus.success;
+                  } else {
+                    existing.waterIndex = _formatWaterIndex(meterData.volume);
+                    existing.waterMeterId = meterData.meterId;
+                    existing.waterStatus = MeterStatus.success;
+                  }
+
+                  // Genel durumu güncelle: Her iki sayaç da başarılıysa success, aksi halde bekliyor/hata
+                  if (existing.heatStatus == MeterStatus.success && existing.waterStatus == MeterStatus.success) {
+                    existing.overallStatus = MeterStatus.success;
+                  } else if (existing.heatStatus == MeterStatus.failed || existing.waterStatus == MeterStatus.failed) {
+                    existing.overallStatus = MeterStatus.failed;
+                  }
+
+                  existing.readTime = DateTime.now();
+                } else {
+                  _meters[flatNo] = MeterData(
+                    flatNo: flatNo,
+                    heatMeterId: _selectedMeterType == MeterType.heat ? meterData.meterId : '',
+                    heatIndex: _selectedMeterType == MeterType.heat ? _formatHeatIndex(meterData.energy) : '0.0',
+                    heatStatus: _selectedMeterType == MeterType.heat ? MeterStatus.success : MeterStatus.pending,
+                    waterMeterId: _selectedMeterType == MeterType.water ? meterData.meterId : '',
+                    waterIndex: _selectedMeterType == MeterType.water ? _formatWaterIndex(meterData.volume) : '0.0',
+                    waterStatus: _selectedMeterType == MeterType.water ? MeterStatus.success : MeterStatus.pending,
+                    overallStatus: MeterStatus.pending, // Henüz tek sayaç okundu
+                    type: _selectedMeterType,
+                    readTime: DateTime.now(),
+                  );
+                }
+
+                _addLog('🔍 Sayaç parse edildi → ID: ${meterData.meterId}');
+                hasChanges = true;
+                
+                if (_readCompleter != null && !_readCompleter!.isCompleted) {
+                  _readCompleter!.complete(true);
+                }
               }
+            } catch (e) {
+              _addLog('❌ Parse hatası: $e');
             }
-          } catch (e) {
-            _addLog('❌ Parse hatası: $e');
+          } else {
+            // CRC Hatalı
+            _addLog('⚠️ CRC Hatalı (Beklenen: 0x${cs.toRadixString(16).padLeft(2, '0').toUpperCase()}, Gelen: 0x${_rxBuffer[totalLength - 2].toRadixString(16).padLeft(2, '0').toUpperCase()}). Kaydırılıyor...');
+            _rxBuffer.removeAt(0); // İlk baytı atıp aramaya devam et (Sliding window)
+            continue;
           }
         } else {
-          // Çerçeve hatalı, havuzu tamamen boşalt (Çarpışma / Veri bozulması)
-          _addLog('⚠️ Hatalı Çerçeve Bitişi: 0x${_rxBuffer[totalLength - 1].toRadixString(16).padLeft(2, '0').toUpperCase()}');
-          _rxBuffer.clear();
-          break;
+          // Bitiş biti 0x16 değil
+          _addLog('⚠️ Hatalı Çerçeve Bitişi: 0x${_rxBuffer[totalLength - 1].toRadixString(16).padLeft(2, '0').toUpperCase()}. Kaydırılıyor...');
+          _rxBuffer.removeAt(0); // İlk baytı atıp aramaya devam et
+          continue;
         }
 
         // İşlenen bu paketi _rxBuffer'dan sil
@@ -1142,7 +1119,71 @@ class DeviceProvider extends ChangeNotifier {
     _timeoutTimer?.cancel();
     _bufferTimer?.cancel();
     _saveTimer?.cancel();
+    _dataSubscription?.cancel();
     _service.dispose();
     super.dispose();
   }
+}
+
+class ExcelParseResult {
+  final List<String> daireList;
+  final List<String> heatList;
+  final List<String> waterList;
+
+  ExcelParseResult({
+    required this.daireList,
+    required this.heatList,
+    required this.waterList,
+  });
+}
+
+String _extractRawValue(dynamic cell) {
+  if (cell == null) return "";
+
+  if (cell is excel_pkg.TextCellValue) return cell.value.toString().trim();
+  if (cell is excel_pkg.IntCellValue) return cell.value.toString().trim();
+  if (cell is excel_pkg.DoubleCellValue) {
+    double d = (cell as dynamic).value;
+    if (d == d.toInt().toDouble()) {
+      return d.toInt().toString();
+    }
+    return cell.value.toString().trim();
+  }
+
+  return cell.toString().trim();
+}
+
+ExcelParseResult _parseExcelBytes(Uint8List bytes) {
+  var excel = excel_pkg.Excel.decodeBytes(bytes);
+  var sheet = excel.tables.values.first;
+
+  List<String> daireList = [];
+  List<String> heatList = [];
+  List<String> waterList = [];
+
+  for (var i = 1; i < sheet.maxRows; i++) {
+    var row = sheet.rows[i];
+    if (row.isEmpty) continue;
+
+    if (row[0] == null || row[0]?.value == null || row[0]!.value.toString().trim().isEmpty) {
+      continue;
+    }
+
+    String daire = _extractRawValue(row[0]?.value);
+    String heat = _extractRawValue(row.length > 1 ? row[1]?.value : null);
+    String water = _extractRawValue(row.length > 2 ? row[2]?.value : null);
+
+    if (heat.isEmpty) heat = "Seri No Bulunamadı";
+    if (water.isEmpty) water = "Seri No Bulunamadı";
+
+    daireList.add(daire);
+    heatList.add(heat);
+    waterList.add(water);
+  }
+
+  return ExcelParseResult(
+    daireList: daireList,
+    heatList: heatList,
+    waterList: waterList,
+  );
 }

@@ -59,15 +59,20 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       
       // Veri girişi tablosundaki listeyi otomatik kaydır
-      if (_inputListScrollController.hasClients) {
+      if (_inputListScrollController.hasClients && !_isInputScrolling) {
+        _isInputScrolling = true;
         _inputListScrollController.animateTo(
           provider.activeIndex * 48.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-        );
+        ).then((_) {
+          _isInputScrolling = false;
+        });
       }
     }
   }
+
+  bool _isInputScrolling = false;
 
   @override
   void dispose() {
@@ -103,8 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Provider'ı dinlemek için Consumer kullanmıyoruz çünkü CustomScrollView içindeki sliver'lar
     // Selector ile kendi parçalarını dinliyor. Ancak ana controller'ların güncellenmesi için
-    // provider'daki değişiklikleri takip etmeliyiz.
-    context.watch<DeviceProvider>();
+    // provider'daki değişiklikleri takip etmeliyiz. (Artık context.watch yok)
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -1343,8 +1347,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  bool _isScrolling = false;
+
   void _scrollToIndex(int index) {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused) return;
+
     // Yeni, daha büyük kart tasarımına göre (yaklaşık 115 birim) offset hesapla.
     // 650 birim üstteki ayarlar, başlıklar ve giriş alanları için tahmini başlangıç noktasıdır.
     double itemHeight = 115.0;
@@ -1352,11 +1359,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     double targetOffset = topOffset + (index * itemHeight);
 
+    _isScrolling = true;
+
     _scrollController.animateTo(
       targetOffset,
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeOutCubic,
-    );
+    ).then((_) {
+      _isScrolling = false;
+    });
   }
 
   void _showAddManualMeterDialog(BuildContext context) {
