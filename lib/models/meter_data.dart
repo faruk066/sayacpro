@@ -14,6 +14,11 @@ class MeterData {
   MeterType type;
   DateTime? readTime;
 
+  String? blok;
+  String? adSoyad;
+  String? sonOkumaTarihi;
+  String? sonEndeks;
+
   String get status => getStatusText();
 
   MeterData({
@@ -27,6 +32,10 @@ class MeterData {
     required this.overallStatus,
     this.type = MeterType.heat,
     this.readTime,
+    this.blok,
+    this.adSoyad,
+    this.sonOkumaTarihi,
+    this.sonEndeks,
   });
 
   Map<String, dynamic> toJson() {
@@ -41,6 +50,10 @@ class MeterData {
       'overallStatus': overallStatus.name,
       'type': type.name,
       'readTime': readTime?.toIso8601String(),
+      if (blok != null) 'blok': blok,
+      if (adSoyad != null) 'adSoyad': adSoyad,
+      if (sonOkumaTarihi != null) 'sonOkumaTarihi': sonOkumaTarihi,
+      if (sonEndeks != null) 'sonEndeks': sonEndeks,
     };
   }
 
@@ -56,6 +69,10 @@ class MeterData {
       overallStatus: MeterStatus.values.byName(json['overallStatus'] as String? ?? json['status'] as String? ?? 'pending'),
       type: MeterType.values.byName(json['type'] as String? ?? 'heat'),
       readTime: json['readTime'] != null ? DateTime.parse(json['readTime'] as String) : null,
+      blok: json['blok'] as String?,
+      adSoyad: json['adSoyad'] as String?,
+      sonOkumaTarihi: json['sonOkumaTarihi'] as String?,
+      sonEndeks: json['sonEndeks'] as String?,
     );
   }
 

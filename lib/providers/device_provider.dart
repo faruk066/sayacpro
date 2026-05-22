@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase_service.dart';
 import '../models/site_data.dart';
-import 'package:excel/excel.dart' as excel_pkg;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/mbus/connection_status.dart';
 import '../services/mbus/mbus_interface.dart';
@@ -311,7 +310,14 @@ class DeviceProvider extends AppDataProvider {
       _isReading = true;
       _rxBuffer.clear();
       _timeoutTimer?.cancel();
-      _meters.clear();
+      // Reset statuses instead of completely wiping metadata like adSoyad
+      for (var meter in _meters.values) {
+        meter.heatStatus = MeterStatus.pending;
+        meter.waterStatus = MeterStatus.pending;
+        meter.overallStatus = MeterStatus.pending;
+        meter.heatIndex = '';
+        meter.waterIndex = '';
+      }
       _activeIndex = -1;
       notifyListeners();
 
@@ -567,13 +573,18 @@ class DeviceProvider extends AppDataProvider {
       final Uint8List? bytes = await ExcelService.pickAndReadExcel();
 
       if (bytes != null) {
-        final parsedData = await compute(_parseExcelBytes, bytes);
+        final parsedMeters = await compute(ExcelService.parseExcel, bytes);
 
-        _daireIds = parsedData.daireList.join("\n");
-        _heatSecondaryIds = parsedData.heatList.join("\n");
-        _waterSecondaryIds = parsedData.waterList.join("\n");
-        
-        _addLog("✅ Excel'den ${parsedData.daireList.length} satır içe aktarıldı.");
+        _daireIds = parsedMeters.map((m) => m.flatNo).join("\n");
+        _heatSecondaryIds = parsedMeters.map((m) => m.heatMeterId).join("\n");
+        _waterSecondaryIds = parsedMeters.map((m) => m.waterMeterId).join("\n");
+
+        _meters.clear();
+        for (var meter in parsedMeters) {
+          _meters[meter.flatNo] = meter;
+        }
+
+        _addLog("✅ Excel'den ${parsedMeters.length} daire içe aktarıldı.");
         saveSession(immediate: true);
         notifyListeners();
         return true;
@@ -1083,67 +1094,4 @@ class DeviceProvider extends AppDataProvider {
     _service.dispose();
     super.dispose();
   }
-}
-
-class ExcelParseResult {
-  final List<String> daireList;
-  final List<String> heatList;
-  final List<String> waterList;
-
-  ExcelParseResult({
-    required this.daireList,
-    required this.heatList,
-    required this.waterList,
-  });
-}
-
-String _extractRawValue(dynamic cell) {
-  if (cell == null) return "";
-
-  if (cell is excel_pkg.TextCellValue) return cell.value.toString().trim();
-  if (cell is excel_pkg.IntCellValue) return cell.value.toString().trim();
-  if (cell is excel_pkg.DoubleCellValue) {
-    double d = (cell as dynamic).value;
-    if (d == d.toInt().toDouble()) {
-      return d.toInt().toString();
-    }
-    return cell.value.toString().trim();
-  }
-
-  return cell.toString().trim();
-}
-
-ExcelParseResult _parseExcelBytes(Uint8List bytes) {
-  var excel = excel_pkg.Excel.decodeBytes(bytes);
-  var sheet = excel.tables.values.first;
-
-  List<String> daireList = [];
-  List<String> heatList = [];
-  List<String> waterList = [];
-
-  for (var i = 1; i < sheet.maxRows; i++) {
-    var row = sheet.rows[i];
-    if (row.isEmpty) continue;
-
-    if (row[0] == null || row[0]?.value == null || row[0]!.value.toString().trim().isEmpty) {
-      continue;
-    }
-
-    String daire = _extractRawValue(row[0]?.value);
-    String heat = _extractRawValue(row.length > 1 ? row[1]?.value : null);
-    String water = _extractRawValue(row.length > 2 ? row[2]?.value : null);
-
-    if (heat.isEmpty) heat = "Seri No Bulunamadı";
-    if (water.isEmpty) water = "Seri No Bulunamadı";
-
-    daireList.add(daire);
-    heatList.add(heat);
-    waterList.add(water);
-  }
-
-  return ExcelParseResult(
-    daireList: daireList,
-    heatList: heatList,
-    waterList: waterList,
-  );
 }

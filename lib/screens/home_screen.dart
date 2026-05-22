@@ -526,25 +526,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildInputSection() {
-    return Selector<AppDataProvider, (int, String, String, String, ReadingMode)>(
+    return Selector<AppDataProvider, (List<MeterData>, String, String, String, ReadingMode)>(
       selector: (_, p) {
         if (kIsWeb) {
-          return (p.meterList.length, '', '', '', p.selectedReadingMode);
+          return (p.meterList, '', '', '', p.selectedReadingMode);
         }
         final dp = p as DeviceProvider;
-        return (0, dp.heatSecondaryIds, dp.waterSecondaryIds, dp.daireIds, p.selectedReadingMode);
+        return (p.meterList, dp.heatSecondaryIds, dp.waterSecondaryIds, dp.daireIds, p.selectedReadingMode);
       },
       builder: (context, data, _) {
+        final meterList = data.$1;
         final selectedReadingMode = data.$5;
 
         if (kIsWeb) {
-          final length = data.$1;
-          final provider = context.read<CloudProvider>();
-          final daireList = provider.meterList.map((m) => m.flatNo).toList();
-          final heatList = provider.meterList.map((m) => m.getHeatMeterIdDisplay()).toList();
-          final waterList = provider.meterList.map((m) => m.getWaterMeterIdDisplay()).toList();
+          final daireList = meterList.map((m) => m.flatNo).toList();
+          final heatList = meterList.map((m) => m.getHeatMeterIdDisplay()).toList();
+          final waterList = meterList.map((m) => m.getWaterMeterIdDisplay()).toList();
 
-          return _buildInputSectionContainer(context, daireList, heatList, waterList, length, selectedReadingMode, isWeb: true);
+          return _buildInputSectionContainer(context, daireList, heatList, waterList, meterList.length, selectedReadingMode, isWeb: true, meters: meterList);
         } else {
           final heatSecondaryIds = data.$2;
           final waterSecondaryIds = data.$3;
@@ -560,15 +559,22 @@ class _HomeScreenState extends State<HomeScreen> {
           final heatList = heatSecondaryIds.split('\n');
           final waterList = waterSecondaryIds.split('\n');
 
-          return _buildInputSectionContainer(context, daireList, heatList, waterList, linesCount, selectedReadingMode, isWeb: false);
+          return _buildInputSectionContainer(context, daireList, heatList, waterList, linesCount, selectedReadingMode, isWeb: false, meters: meterList);
         }
       },
     );
   }
 
-  Widget _buildInputSectionContainer(BuildContext context, List<String> daireList, List<String> heatList, List<String> waterList, int linesCount, ReadingMode selectedReadingMode, {required bool isWeb}) {
+  Widget _buildInputSectionContainer(BuildContext context, List<String> daireList, List<String> heatList, List<String> waterList, int linesCount, ReadingMode selectedReadingMode, {required bool isWeb, required List<MeterData> meters}) {
         String getRow(List<String> list, int i) =>
             (i < list.length) ? list[i] : '';
+
+        String getTooltip(int i) {
+          if (i >= meters.length) return '';
+          final meter = meters[i];
+          final ad = meter.adSoyad;
+          return ad != null && ad.isNotEmpty ? ad : '';
+        }
 
         final theme = Theme.of(context);
         final colorScheme = theme.colorScheme;
@@ -586,6 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         Widget buildDataRow(int i) {
           final mode = selectedReadingMode;
+          final tooltipText = getTooltip(i);
           return Container(
             height: 48,
             decoration: BoxDecoration(
@@ -598,16 +605,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   flex: flexDaire,
                   child: Center(
-                    child: Text(
-                      getRow(daireList, i).isEmpty ? '${i + 1}' : getRow(daireList, i),
-                      style: TextStyle(
-                        color: textMain,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: tooltipText.isNotEmpty
+                      ? Tooltip(
+                          message: tooltipText,
+                          child: Text(
+                            getRow(daireList, i).isEmpty ? '${i + 1}' : getRow(daireList, i),
+                            style: TextStyle(
+                              color: textMain,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      : Text(
+                          getRow(daireList, i).isEmpty ? '${i + 1}' : getRow(daireList, i),
+                          style: TextStyle(
+                            color: textMain,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                   ),
                 ),
                 if (mode == ReadingMode.heat || mode == ReadingMode.both)
@@ -1154,6 +1175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   isiEndeks: meter.getHeatIndexDisplay(),
                   suEndeks: meter.getWaterIndexDisplay(),
                   isSuccess: isSuccess,
+                  adSoyad: meter.adSoyad,
                 );
               },
             );
