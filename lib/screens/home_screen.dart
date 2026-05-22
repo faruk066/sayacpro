@@ -6,13 +6,16 @@ import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:excel/excel.dart' as excel_pkg;
+import '../providers/cloud_provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/app_data_provider.dart';
 import '../providers/theme_provider.dart';
 import 'widgets/section_header.dart';
 import 'widgets/connection_card.dart';
 import 'widgets/log_console_sheet.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/rendering.dart';
+import '../services/excel_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,15 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<DeviceProvider>();
-      provider.scanDevices();
-
-      // activeIndex değişimini dinle
-      provider.addListener(_onProviderChange);
+      if (!kIsWeb) {
+        final provider = context.read<DeviceProvider>();
+        provider.scanDevices();
+        provider.addListener(_onProviderChange);
+      }
     });
   }
 
   void _onProviderChange() {
+    if (kIsWeb) return;
     final provider = context.read<DeviceProvider>();
     if (!provider.isReading) {
       if (_isAutoScrollPaused) {
@@ -58,20 +62,26 @@ class _HomeScreenState extends State<HomeScreen> {
         _scrollToIndex(provider.activeIndex);
       }
       
-      // Veri girişi tablosundaki listeyi otomatik kaydır
-      if (_inputListScrollController.hasClients) {
+      if (_inputListScrollController.hasClients && !_isInputScrolling) {
+        _isInputScrolling = true;
         _inputListScrollController.animateTo(
           provider.activeIndex * 48.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-        );
+        ).then((_) {
+          _isInputScrolling = false;
+        });
       }
     }
   }
 
+  bool _isInputScrolling = false;
+
   @override
   void dispose() {
-    context.read<DeviceProvider>().removeListener(_onProviderChange);
+    if (!kIsWeb) {
+      context.read<DeviceProvider>().removeListener(_onProviderChange);
+    }
     _logScrollController.dispose();
     _scrollController.dispose();
     _inputListScrollController.dispose();
@@ -84,27 +94,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Controller senkronizasyonu için dinlemeyen bir provider alalım
-    final provider = context.read<DeviceProvider>();
-
-    // Controller'ları provider ile senkronize et (sadece build sırasında)
-    if (_siteNameController.text != provider.siteName) {
-      _siteNameController.text = provider.siteName;
-    }
-    if (_daireController.text != provider.daireIds) {
-      _daireController.text = provider.daireIds;
-    }
-    if (_heatController.text != provider.heatSecondaryIds) {
-      _heatController.text = provider.heatSecondaryIds;
-    }
-    if (_waterController.text != provider.waterSecondaryIds) {
-      _waterController.text = provider.waterSecondaryIds;
+    if (kIsWeb) {
+      final cloudProvider = context.read<CloudProvider>();
+      if (cloudProvider.currentSiteId.isEmpty) {
+        cloudProvider.listenToSite('default_site');
+      }
     }
 
-    // Provider'ı dinlemek için Consumer kullanmıyoruz çünkü CustomScrollView içindeki sliver'lar
-    // Selector ile kendi parçalarını dinliyor. Ancak ana controller'ların güncellenmesi için
-    // provider'daki değişiklikleri takip etmeliyiz.
-    context.watch<DeviceProvider>();
+    if (!kIsWeb) {
+      final provider = context.read<DeviceProvider>();
+      if (_siteNameController.text != provider.siteName) {
+        _siteNameController.text = provider.siteName;
+      }
+      if (_daireController.text != provider.daireIds) {
+        _daireController.text = provider.daireIds;
+      }
+      if (_heatController.text != provider.heatSecondaryIds) {
+        _heatController.text = provider.heatSecondaryIds;
+      }
+      if (_waterController.text != provider.waterSecondaryIds) {
+        _waterController.text = provider.waterSecondaryIds;
+      }
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -117,11 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onNotification: (ScrollNotification notification) {
                 if (notification is UserScrollNotification) {
                   if (notification.direction != ScrollDirection.idle) {
-                    final provider = context.read<DeviceProvider>();
-                    if (provider.isReading && !_isAutoScrollPaused) {
-                      setState(() {
-                        _isAutoScrollPaused = true;
-                      });
+                    if (!kIsWeb) {
+                      final provider = context.read<DeviceProvider>();
+                      if (provider.isReading && !_isAutoScrollPaused) {
+                        setState(() {
+                          _isAutoScrollPaused = true;
+                        });
+                      }
                     }
                   }
                 }
@@ -130,43 +143,55 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                // ── Bölüm 1: Bağlantı & Ayarlar ──
-                const SliverToBoxAdapter(
-                  child: SectionHeader(
-                    icon: Icons.settings_input_hdmi,
-                    title: 'BAĞLANTI & AYARLAR',
+                if (!kIsWeb)
+                  const SliverToBoxAdapter(
+                    child: SectionHeader(
+                      icon: Icons.settings_input_hdmi,
+                      title: 'BAĞLANTI & AYARLAR',
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(child: ConnectionCard(provider: provider)),
+                if (!kIsWeb)
+                  SliverToBoxAdapter(child: ConnectionCard(provider: context.read<DeviceProvider>())),
 
-                // ── Bölüm 2: Veri Girişi & İşlem ──
-                Selector<DeviceProvider, String>(
-                  selector: (_, p) => p.selectedCommand.label,
-                  builder: (context, label, _) {
-                    if (label == 'İkincil Adres (Seri No ile)') {
-                      return SliverToBoxAdapter(
-                        child: Column(
-                          children: [
-                            const SectionHeader(
-                              icon: Icons.edit_note,
-                              title: 'VERİ GİRİŞİ & İŞLEM',
-                              iconColor: AppTheme.purple,
-                            ),
-                            _buildInputSection(),
-                          ],
+                if (kIsWeb)
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        const SectionHeader(
+                          icon: Icons.edit_note,
+                          title: 'VERİ GİRİŞİ & İŞLEM',
+                          iconColor: AppTheme.purple,
                         ),
-                      );
-                    }
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  },
-                ),
+                        _buildInputSection(),
+                      ],
+                    ),
+                  )
+                else
+                  Selector<DeviceProvider, String>(
+                    selector: (_, p) => p.selectedCommand.label,
+                    builder: (context, label, _) {
+                      if (label == 'İkincil Adres (Seri No ile)') {
+                        return SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              const SectionHeader(
+                                icon: Icons.edit_note,
+                                title: 'VERİ GİRİŞİ & İŞLEM',
+                                iconColor: AppTheme.purple,
+                              ),
+                              _buildInputSection(),
+                            ],
+                          ),
+                        );
+                      }
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  ),
 
-                // ── Sayaçları Oku Butonu ──
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(child: _buildReadButton()),
+                if (!kIsWeb) SliverToBoxAdapter(child: _buildReadButton()),
 
-                // Bölüm 3: Sonuç Listesi
-                Selector<DeviceProvider, bool>(
+                Selector<AppDataProvider, bool>(
                   selector: (_, p) => p.meterList.isNotEmpty,
                   builder: (context, hasMeters, _) {
                     if (hasMeters) {
@@ -189,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
 
-                // Alt boşluk
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
@@ -198,8 +222,40 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // ── FAB: Yeni Sayaç Ekle & Sonuçları Paylaş ──
-      floatingActionButton: Selector<DeviceProvider, bool>(
+      floatingActionButton: kIsWeb ? _buildWebFAB() : _buildMobileFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+
+      bottomNavigationBar: kIsWeb ? const SizedBox.shrink() : _buildMobileBottomNav(),
+    );
+  }
+
+  Widget _buildWebFAB() {
+    return Selector<CloudProvider, bool>(
+      selector: (_, p) => p.meterList.isNotEmpty,
+      builder: (context, hasMeters, _) {
+        if (!hasMeters) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FloatingActionButton.extended(
+                heroTag: 'export_btn',
+                onPressed: () => _showExportOptionsDialog(context, context.read<CloudProvider>(), isWeb: true),
+                icon: const Icon(Icons.table_chart),
+                label: const Text('Sonuçları Paylaş'),
+                backgroundColor: AppTheme.success,
+                foregroundColor: Colors.white,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileFAB() {
+    return Selector<DeviceProvider, bool>(
         selector: (_, p) => p.isReading,
         builder: (context, isReading, _) {
           if (isReading) {
@@ -244,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 16),
                       FloatingActionButton.extended(
                         heroTag: 'export_btn',
-                        onPressed: () => _showExportOptionsDialog(context, provider),
+                        onPressed: () => _showExportOptionsDialog(context, context.read<DeviceProvider>(), isWeb: false),
                         icon: const Icon(Icons.table_chart),
                         label: const Text('Sonuçları Paylaş'),
                         backgroundColor: AppTheme.success,
@@ -257,13 +313,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         },
-      ),
-      floatingActionButtonLocation: provider.isReading
-          ? FloatingActionButtonLocation.endFloat
-          : FloatingActionButtonLocation.centerFloat,
+      );
+  }
 
-      // ── Bottom Navigation Bar: Okuma Yapılırken Altta Sabit Butonlar (Locked) ──
-      bottomNavigationBar: Selector<DeviceProvider, (bool, bool, String)>(
+  Widget _buildMobileBottomNav() {
+    return Selector<DeviceProvider, (bool, bool, String)>(
         selector: (_, p) => (p.isReading, p.isPaused, p.readingStatus),
         builder: (context, data, _) {
           final isReading = data.$1;
@@ -374,41 +428,42 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-      ),
-    );
+      );
   }
-
-  // ── AppBar ─────────────────────────────────────────────────────────────────
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       title: Row(
         children: [
-          Selector<DeviceProvider, ConnectionStatus>(
-            selector: (_, p) => p.status,
-            builder: (context, status, _) {
-              return Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _statusColor(status),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _statusColor(status).withValues(alpha: 0.6),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 12),
+          if (!kIsWeb)
+            Selector<DeviceProvider, ConnectionStatus>(
+              selector: (_, p) => p.status,
+              builder: (context, status, _) {
+                return Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _statusColor(status),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _statusColor(status).withValues(alpha: 0.6),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          if (!kIsWeb) const SizedBox(width: 12),
           const Text('SayacPro'),
+          if (kIsWeb) const Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: Text(' Dashboard', style: TextStyle(fontWeight: FontWeight.w300)),
+          ),
         ],
       ),
       actions: [
-        // Tema Değiştirme Butonu
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, _) {
             return IconButton(
@@ -423,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        // Ses butonu
+        if (!kIsWeb)
         Selector<DeviceProvider, bool>(
           selector: (_, p) => p.isSoundEnabled,
           builder: (context, isEnabled, _) {
@@ -441,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        // Konsol butonu
+        if (!kIsWeb)
         Selector<DeviceProvider, int>(
           selector: (_, p) => p.logLines.length,
           builder: (context, logCount, _) {
@@ -459,7 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        // Cihaz tara
+        if (!kIsWeb)
         IconButton(
           icon: const Icon(Icons.refresh, size: 22),
           tooltip: 'Cihazları Tara',
@@ -470,32 +525,48 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Veri Girişi Bölümü ─────────────────────────────────────────────────────
-
   Widget _buildInputSection() {
-    final provider = context.read<DeviceProvider>();
-    return Selector<DeviceProvider, (String, String, String)>(
-      selector: (_, p) => (p.heatSecondaryIds, p.waterSecondaryIds, p.daireIds),
+    return Selector<AppDataProvider, (int, String, String, String, ReadingMode)>(
+      selector: (_, p) {
+        if (kIsWeb) {
+          return (p.meterList.length, '', '', '', p.selectedReadingMode);
+        }
+        final dp = p as DeviceProvider;
+        return (0, dp.heatSecondaryIds, dp.waterSecondaryIds, dp.daireIds, p.selectedReadingMode);
+      },
       builder: (context, data, _) {
-        final heatSecondaryIds = data.$1;
-        final waterSecondaryIds = data.$2;
-        final daireIds = data.$3;
+        final selectedReadingMode = data.$5;
 
-        int heatLines = heatSecondaryIds.split('\n').length;
-        int waterLines = waterSecondaryIds.split('\n').length;
-        int daireLines = daireIds.split('\n').length;
-        int linesCount = [
-          heatLines,
-          waterLines,
-          daireLines,
-        ].reduce((a, b) => a > b ? a : b);
-        if (linesCount < 4) linesCount = 4;
+        if (kIsWeb) {
+          final length = data.$1;
+          final provider = context.read<CloudProvider>();
+          final daireList = provider.meterList.map((m) => m.flatNo).toList();
+          final heatList = provider.meterList.map((m) => m.getHeatMeterIdDisplay()).toList();
+          final waterList = provider.meterList.map((m) => m.getWaterMeterIdDisplay()).toList();
 
-        // Satır listelerini oluştur
-        final daireList = daireIds.split('\n');
-        final heatList = heatSecondaryIds.split('\n');
-        final waterList = waterSecondaryIds.split('\n');
+          return _buildInputSectionContainer(context, daireList, heatList, waterList, length, selectedReadingMode, isWeb: true);
+        } else {
+          final heatSecondaryIds = data.$2;
+          final waterSecondaryIds = data.$3;
+          final daireIds = data.$4;
 
+          int heatLines = heatSecondaryIds.split('\n').length;
+          int waterLines = waterSecondaryIds.split('\n').length;
+          int daireLines = daireIds.split('\n').length;
+          int linesCount = [heatLines, waterLines, daireLines].reduce((a, b) => a > b ? a : b);
+          if (linesCount < 4) linesCount = 4;
+
+          final daireList = daireIds.split('\n');
+          final heatList = heatSecondaryIds.split('\n');
+          final waterList = waterSecondaryIds.split('\n');
+
+          return _buildInputSectionContainer(context, daireList, heatList, waterList, linesCount, selectedReadingMode, isWeb: false);
+        }
+      },
+    );
+  }
+
+  Widget _buildInputSectionContainer(BuildContext context, List<String> daireList, List<String> heatList, List<String> waterList, int linesCount, ReadingMode selectedReadingMode, {required bool isWeb}) {
         String getRow(List<String> list, int i) =>
             (i < list.length) ? list[i] : '';
 
@@ -503,7 +574,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final colorScheme = theme.colorScheme;
         final isDark = theme.brightness == Brightness.dark;
 
-        // Dinamik Tema Renkleri — Light/Dark otomatik uyumlu
         final Color bgSurface = isDark ? const Color(0xFF1E293B) : Colors.white;
         final Color bgHeader  = isDark ? const Color(0xFF0F172A) : const Color(0xFFF5EFE6);
         final Color borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFD6CFC4);
@@ -514,11 +584,10 @@ class _HomeScreenState extends State<HomeScreen> {
         const int flexDaire = 2;
         const int flexSayac = 4;
 
-        // ── Satır Widget'ı ──────────────────────────────────────────────────
         Widget buildDataRow(int i) {
-          final mode = provider.selectedReadingMode;
+          final mode = selectedReadingMode;
           return Container(
-            height: 48, // Sabit yükseklik — uzun metin bile satırı kaydıramaz
+            height: 48,
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: borderColor, width: 0.5),
@@ -526,7 +595,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Row(
               children: [
-                // DAİRE
                 Expanded(
                   flex: flexDaire,
                   child: Center(
@@ -542,7 +610,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // ISI SAYACI
                 if (mode == ReadingMode.heat || mode == ReadingMode.both)
                   Expanded(
                     flex: flexSayac,
@@ -570,7 +637,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                // SICAK SU
                 if (mode == ReadingMode.water || mode == ReadingMode.both)
                   Expanded(
                     flex: flexSayac,
@@ -623,7 +689,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Üst Başlık ──────────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
                   decoration: BoxDecoration(
@@ -664,6 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
+                      if (!isWeb)
                       TextButton.icon(
                         onPressed: () async {
                           final provider = context.read<DeviceProvider>();
@@ -710,7 +776,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Site Adı ──────────────────────────────────────────
                       Container(
                         decoration: BoxDecoration(
                           color: inputBg,
@@ -721,8 +786,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           key: const ValueKey('siteNameInput'),
                           controller: _siteNameController,
                           style: TextStyle(color: textMain, fontSize: 14),
-                          onChanged: (val) =>
+                          onChanged: isWeb ? null : (val) =>
                               context.read<DeviceProvider>().setSiteName(val),
+                          readOnly: isWeb,
                           decoration: InputDecoration(
                             labelText: 'Site / Apartman Adı',
                             labelStyle: TextStyle(color: textMuted),
@@ -739,7 +805,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Gizli Controller TextField’ları (state güncelleme için) ──
                       Offstage(
                         offstage: true,
                         child: Column(
@@ -749,7 +814,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               controller: _daireController,
                               keyboardType: TextInputType.multiline,
                               maxLines: null,
-                              onChanged: (val) =>
+                              onChanged: isWeb ? null : (val) =>
                                   context.read<DeviceProvider>().setDaireIds(val),
                             ),
                             TextField(
@@ -757,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               controller: _heatController,
                               keyboardType: TextInputType.multiline,
                               maxLines: null,
-                              onChanged: (val) =>
+                              onChanged: isWeb ? null : (val) =>
                                   context.read<DeviceProvider>().setHeatSecondaryIds(val),
                             ),
                             TextField(
@@ -765,14 +830,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               controller: _waterController,
                               keyboardType: TextInputType.multiline,
                               maxLines: null,
-                              onChanged: (val) =>
+                              onChanged: isWeb ? null : (val) =>
                                   context.read<DeviceProvider>().setWaterSecondaryIds(val),
                             ),
                           ],
                         ),
                       ),
 
-                      // ── Modern Sayac Tablosu (Daraltılabilir & Scrollable) ───────────────────
                       const SizedBox(height: 16),
                       Theme(
                         data: theme.copyWith(dividerColor: Colors.transparent),
@@ -803,7 +867,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  // BAŞLIK SATIRI
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -833,7 +896,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                         ),
-                                        if (provider.selectedReadingMode == ReadingMode.heat || provider.selectedReadingMode == ReadingMode.both)
+                                        if (selectedReadingMode == ReadingMode.heat || selectedReadingMode == ReadingMode.both)
                                           Expanded(
                                             flex: flexSayac,
                                             child: Text(
@@ -847,7 +910,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                             ),
                                           ),
-                                        if (provider.selectedReadingMode == ReadingMode.water || provider.selectedReadingMode == ReadingMode.both)
+                                        if (selectedReadingMode == ReadingMode.water || selectedReadingMode == ReadingMode.both)
                                           Expanded(
                                             flex: flexSayac,
                                             child: Text(
@@ -864,7 +927,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ],
                                     ),
                                   ),
-                                  // VERİ SATIRLARI (Virtualized & Scrollable)
                                   SizedBox(
                                     height: linesCount * 48.0 > 240 ? 240 : linesCount * 48.0,
                                     child: ListView.builder(
@@ -887,11 +949,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         );
-      },
-    );
   }
-
-  // ── Sayaçları Oku Butonu ───────────────────────────────────────────────────
 
   Widget _buildReadButton() {
     return Selector<DeviceProvider, (bool, bool)>(
@@ -951,12 +1009,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Sonuç Başlık Satırı ────────────────────────────────────────────────────
-
   Widget _buildResultHeader() {
-    return Selector<DeviceProvider, int>(
+    return Selector<AppDataProvider, int>(
       selector: (_, p) => p.meterList.length,
       builder: (context, length, _) {
+        return _buildResultHeaderContainer(context, length, isWeb: kIsWeb);
+      },
+    );
+  }
+
+  Widget _buildResultHeaderContainer(BuildContext context, int length, {required bool isWeb}) {
         final colorScheme = Theme.of(context).colorScheme;
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 16, 4),
@@ -995,6 +1057,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const Spacer(),
+              if (!isWeb)
               TextButton.icon(
                 onPressed: () => context.read<DeviceProvider>().clearMeters(),
                 icon: const Icon(Icons.delete_sweep_outlined, size: 18),
@@ -1014,11 +1077,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         );
-      },
-    );
   }
 
   Widget _buildRetryButtonSliver() {
+    if (kIsWeb) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
     return Selector<DeviceProvider, (bool, bool)>(
       selector: (_, p) => (
         p.isReading,
@@ -1062,15 +1125,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Sayaç Kartları Listesi (Sliver) ──────────────────────────────────────────
-
   Widget _buildMetersSliverList() {
-    return Selector<DeviceProvider, int>(
+    return Selector<AppDataProvider, int>(
       selector: (_, provider) => provider.meterList.length,
       builder: (context, length, _) {
         return SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
-            return Selector<DeviceProvider, (MeterData, ReadingMode)>(
+            return Selector<AppDataProvider, (MeterData, ReadingMode)>(
               key: ValueKey('selector_$index'),
               selector: (_, provider) => (provider.meterList[index], provider.selectedReadingMode),
               builder: (context, data, _) {
@@ -1101,8 +1162,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
-  // ── Boş Durum ──────────────────────────────────────────────────────────────
 
   Widget _buildEmptyState() {
     return Padding(
@@ -1154,7 +1213,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Cihazı bağlayıp ayarlarınızı tamamladıktan sonra\n"Sayaçları Oku" butonuna basarak işleme başlayabilirsiniz.',
+              kIsWeb
+                ? 'Saha ekibi okuma başlattığında canlı olarak burada görünecektir.'
+                : 'Cihazı bağlayıp ayarlarınızı tamamladıktan sonra\n"Sayaçları Oku" butonuna basarak işleme başlayabilirsiniz.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1168,18 +1229,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── CSV Export ─────────────────────────────────────────────────────────────
-
-  Future<void> _exportToCSV(DeviceProvider provider) async {
+  Future<void> _exportToCSV(dynamic provider) async {
     try {
       final siteName = provider.siteName.isEmpty
           ? 'Bilinmeyen_Site'
           : provider.siteName;
-      final meterList = provider.meterList;
-      final mode = provider.selectedReadingMode;
+      final List<MeterData> meterList = provider.meterList;
+      final ReadingMode mode = provider.selectedReadingMode;
 
-      // CSV içeriğini arka planda oluştur
-      final csvContent = await compute(_generateCSVString, (meterList, mode));
+      final csvContent = await compute<(List<MeterData>, ReadingMode), String>(_generateCSVString, (meterList, mode));
+
+      if (kIsWeb) {
+        final fileName = 'SayacRapor_${siteName}_${DateTime.now().toIso8601String().replaceAll(':', '-')}.csv';
+        await ExcelService.saveAndShareExcel(Uint8List.fromList(csvContent.codeUnits), fileName);
+        return;
+      }
 
       final directory = await getApplicationDocumentsDirectory();
       final dateStr = DateTime.now()
@@ -1206,41 +1270,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── Excel Export ───────────────────────────────────────────────────────────
-
-  Future<void> _exportToExcel(DeviceProvider provider) async {
+  Future<void> _exportToExcel(dynamic provider) async {
     try {
       final siteName = provider.siteName.isEmpty
           ? 'Bilinmeyen_Site'
           : provider.siteName;
-      final meterList = provider.meterList;
-      final mode = provider.selectedReadingMode;
+      final List<MeterData> meterList = provider.meterList;
+      final ReadingMode mode = provider.selectedReadingMode;
 
-      // Excel dosyasını arka planda oluştur
-      final fileBytes = await compute(_generateExcelBytes, (
+      final fileBytes = await compute<(List<MeterData>, String, ReadingMode), List<int>?>(_generateExcelBytes, (
         meterList,
         siteName,
         mode,
       ));
 
       if (fileBytes != null) {
-        final directory = await getApplicationDocumentsDirectory();
         final dateStr = DateTime.now()
             .toIso8601String()
             .replaceAll(':', '-')
             .split('.')[0];
-        final filePath =
-            '${directory.path}/SayacRapor_${siteName}_$dateStr.xlsx';
+        final fileName = 'SayacRapor_${siteName}_$dateStr.xlsx';
 
-        final file = File(filePath);
-        await file.writeAsBytes(fileBytes);
-
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(filePath)],
-            text: '$siteName Sayaç Okuma Raporu (.xlsx)',
-          ),
-        );
+        await ExcelService.saveAndShareExcel(Uint8List.fromList(fileBytes), fileName);
       }
     } catch (e) {
       if (mounted) {
@@ -1251,9 +1302,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── Dışa Aktarma Format Seçimi (BottomSheet) ───────────────────────────────
-
-  void _showExportOptionsDialog(BuildContext context, DeviceProvider provider) {
+  void _showExportOptionsDialog(BuildContext context, dynamic provider, {required bool isWeb}) {
+    final actualProvider = isWeb ? context.read<CloudProvider>() : provider;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1276,7 +1326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: const Text('Önerilen (Formatlı tablo)'),
                 onTap: () {
                   Navigator.pop(context);
-                  _exportToExcel(provider);
+                  _exportToExcel(actualProvider);
                 },
               ),
               ListTile(
@@ -1288,7 +1338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: const Text('Düz metin formatında'),
                 onTap: () {
                   Navigator.pop(context);
-                  _exportToCSV(provider);
+                  _exportToCSV(actualProvider);
                 },
               ),
               const SizedBox(height: 16),
@@ -1298,8 +1348,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
-  // ── Yardımcılar ────────────────────────────────────────────────────────────
 
   void _showCompletionDialog() {
     if (!mounted) return;
@@ -1343,20 +1391,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  bool _isScrolling = false;
+
   void _scrollToIndex(int index) {
-    if (!_scrollController.hasClients) return;
-    // Yeni, daha büyük kart tasarımına göre (yaklaşık 115 birim) offset hesapla.
-    // 650 birim üstteki ayarlar, başlıklar ve giriş alanları için tahmini başlangıç noktasıdır.
+    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused) return;
+
     double itemHeight = 115.0;
     double topOffset = 650.0;
 
     double targetOffset = topOffset + (index * itemHeight);
 
+    _isScrolling = true;
+
     _scrollController.animateTo(
       targetOffset,
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeOutCubic,
-    );
+    ).then((_) {
+      _isScrolling = false;
+    });
   }
 
   void _showAddManualMeterDialog(BuildContext context) {
@@ -1430,7 +1483,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 18),
                   
-                  // Daire No
                   TextFormField(
                     controller: daireController,
                     style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -1459,7 +1511,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Isı Sayacı Seri No
                   TextFormField(
                     controller: heatSerialController,
                     style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -1482,7 +1533,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Isı Enerji Endeksi
                   TextFormField(
                     controller: heatIndexController,
                     style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -1508,7 +1558,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   Divider(height: 24, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
 
-                  // Sıcak Su Seri No
                   TextFormField(
                     controller: waterSerialController,
                     style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -1531,7 +1580,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Sıcak Su Endeksi
                   TextFormField(
                     controller: waterIndexController,
                     style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -1628,7 +1676,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Isolate içinde çalışacak ağır işlem fonksiyonları (Top-level)
 String _generateCSVString((List<MeterData>, ReadingMode) data) {
   final meters = data.$1;
   final mode = data.$2;
@@ -1686,12 +1733,10 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
   final mode = data.$3;
   final excel = excel_pkg.Excel.createExcel();
 
-  // Varsayılan sayfayı temizle veya al
   const sheetName = 'Sayfa1';
   final sheet = excel[sheetName];
   excel.setDefaultSheet(sheetName);
 
-  // Başlık Stili (Bold)
   final headerStyle = excel_pkg.CellStyle(
     bold: true,
     fontFamily: excel_pkg.getFontFamily(excel_pkg.FontFamily.Calibri),
@@ -1699,7 +1744,6 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
     horizontalAlign: excel_pkg.HorizontalAlign.Center,
   );
 
-  // Başlıklar (Row 1) - Seçilen Okuma Moduna göre dinamik oluştur
   final headers = <String>[];
   headers.add('Daire No');
   
@@ -1716,9 +1760,7 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
   headers.add('Son Okuma Tarihi');
   headers.add('Durum');
 
-  // Row 0: Site/Apartman Adı (Şablondaki gibi A1 hücresine yazıp genişleteceğiz)
   sheet.appendRow([excel_pkg.TextCellValue('Site/Apartman Adı: $siteName')]);
-  // İlk satırı birleştirebiliriz (A1'den son sütuna kadar)
   sheet.merge(
     excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
     excel_pkg.CellIndex.indexByColumnRow(columnIndex: headers.length - 1, rowIndex: 0),
@@ -1726,7 +1768,6 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
 
   sheet.appendRow(headers.map((h) => excel_pkg.TextCellValue(h)).toList());
 
-  // Başlıklara stil uygula (Row index 1)
   for (var i = 0; i < headers.length; i++) {
     var cell = sheet.cell(
       excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 1),
@@ -1734,7 +1775,6 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
     cell.cellStyle = headerStyle;
   }
 
-  // Veriler (Row 2'den başlar)
   for (var i = 0; i < meters.length; i++) {
     final m = meters[i];
     final dateStr = m.readTime != null
@@ -1761,22 +1801,21 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
     sheet.appendRow(rowData);
   }
 
-  // Sütun Genişlikleri (Tahmini AutoFit)
   int colIndex = 0;
-  sheet.setColumnWidth(colIndex++, 15); // Daire No
+  sheet.setColumnWidth(colIndex++, 15);
   
   if (mode == ReadingMode.heat || mode == ReadingMode.both) {
-    sheet.setColumnWidth(colIndex++, 20); // Isı No
-    sheet.setColumnWidth(colIndex++, 20); // Isı Enerji
+    sheet.setColumnWidth(colIndex++, 20);
+    sheet.setColumnWidth(colIndex++, 20);
   }
   
   if (mode == ReadingMode.water || mode == ReadingMode.both) {
-    sheet.setColumnWidth(colIndex++, 20); // Su No
-    sheet.setColumnWidth(colIndex++, 20); // Su Hacim
+    sheet.setColumnWidth(colIndex++, 20);
+    sheet.setColumnWidth(colIndex++, 20);
   }
   
-  sheet.setColumnWidth(colIndex++, 25); // Tarih
-  sheet.setColumnWidth(colIndex++, 15); // Durum
+  sheet.setColumnWidth(colIndex++, 25);
+  sheet.setColumnWidth(colIndex++, 15);
 
   return excel.encode();
 }

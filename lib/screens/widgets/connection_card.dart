@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:usb_serial/usb_serial.dart';
 import '../../providers/device_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -65,7 +64,7 @@ class ConnectionCard extends StatelessWidget {
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant))
                             : DropdownButtonHideUnderline(
-                                child: DropdownButton<UsbDevice>(
+                                child: DropdownButton<dynamic>(
                                   value: provider.selectedDevice,
                                   dropdownColor: colorScheme.surfaceContainerHigh,
                                   style: theme.textTheme.titleMedium?.copyWith(
@@ -74,10 +73,10 @@ class ConnectionCard extends StatelessWidget {
                                   isExpanded: true,
                                   icon: Icon(Icons.keyboard_arrow_down_rounded, color: colorScheme.primary),
                                   items: provider.devices.map((d) {
-                                    return DropdownMenuItem(
+                                    return DropdownMenuItem<dynamic>(
                                       value: d,
                                       child: Text(
-                                        d.productName ?? d.deviceName,
+                                        d.productName ?? d.deviceName ?? "Bilinmeyen Cihaz",
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     );
