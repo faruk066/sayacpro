@@ -1,21 +1,22 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
-import 'package:usb_serial/usb_serial.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:file_picker/file_picker.dart' as fp;
+import '../services/firebase_service.dart';
+import '../models/site_data.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/mbus_service.dart';
+import '../services/mbus/connection_status.dart';
+import '../services/mbus/mbus_interface.dart';
+import '../services/mbus/mbus_stub.dart';
+import '../services/excel_service.dart';
 import '../services/mbus_parser.dart';
 import '../models/meter_data.dart';
 
-export '../services/mbus_service.dart' show ConnectionStatus;
+export '../services/mbus/connection_status.dart';
 export '../models/meter_data.dart';
-
-// MeterType moved to meter_data.dart
+import 'app_data_provider.dart';
 
 class MBusCommandOption {
   final String label;
@@ -30,10 +31,9 @@ class MBusCommandOption {
   int get hashCode => label.hashCode;
 }
 
-
-/// Uygulama genelinde USB bağlantı ve veri durumunu yöneten Provider.
-class DeviceProvider extends ChangeNotifier {
-  final MBusService _service = MBusService();
+class DeviceProvider extends AppDataProvider {
+  final MBusInterface _service = getMBusService();
+  final FirebaseService _firebaseService = FirebaseService();
   
   final List<MBusCommandOption> addressOptions = const [
     MBusCommandOption('Tümü (FE - Broadcast)', [0x10, 0x5B, 0xFE, 0x59, 0x16]),
@@ -46,20 +46,18 @@ class DeviceProvider extends ChangeNotifier {
 
   late MBusCommandOption _selectedCommand = addressOptions[0];
 
-  List<UsbDevice> _devices = [];
-  UsbDevice? _selectedDevice;
+  List<dynamic> _devices = [];
+  dynamic _selectedDevice;
   ConnectionStatus _status = ConnectionStatus.disconnected;
   final List<String> _logLines = [];
   bool _isReading = false;
   StreamSubscription<Uint8List>? _dataSubscription;
 
-  // Parse edilmiş sayaç verileri (Daire No'ya göre)
   final Map<String, MeterData> _meters = {};
-  // Birden fazla paketi birleştirmek için buffer
   final List<int> _rxBuffer = [];
   Timer? _bufferTimer;
   Timer? _timeoutTimer;
-  Timer? _saveTimer; // Otomatik kayıt debounce için
+  Timer? _saveTimer;
 
   int _baudRate = 2400;
   String _heatSecondaryIds = '';
@@ -67,23 +65,22 @@ class DeviceProvider extends ChangeNotifier {
   String _daireIds = '';
   int _primaryStart = 1;
   int _primaryEnd = 50;
-  MeterType _selectedMeterType = MeterType.heat; // Sadece parser için kullanacağız
+  MeterType _selectedMeterType = MeterType.heat;
   ReadingMode _selectedReadingMode = ReadingMode.both;
   String _readingStatus = '';
   int _activeIndex = -1;
   Completer<bool>? _readCompleter;
   Completer<bool>? _e5Completer;
 
-  // Döngü kontrolleri
   bool _isPaused = false;
   bool _isStopped = false;
   Completer<void>? _pauseCompleter;
 
   String _siteName = '';
-  String _currentReadingFlat = ''; // Şu an okunan daire
+  String get siteId => _siteName.isEmpty ? 'default_site' : _siteName.replaceAll(' ', '_').toLowerCase();
+  String _currentReadingFlat = '';
   final Map<String, int> _expectedDaireNo = {};
 
-  // Ses Oynatıcı
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isSoundEnabled = true;
 
@@ -91,15 +88,15 @@ class DeviceProvider extends ChangeNotifier {
     loadSession();
   }
 
-  // ── Getters ────────────────────────────────────────────────────────────────
-
-  List<UsbDevice> get devices => _devices;
-  UsbDevice? get selectedDevice => _selectedDevice;
+  List<dynamic> get devices => _devices;
+  dynamic get selectedDevice => _selectedDevice;
   ConnectionStatus get status => _status;
   List<String> get logLines => List.unmodifiable(_logLines);
+  @override
   bool get isReading => _isReading;
   bool get isConnected => _status == ConnectionStatus.connected;
   Map<String, MeterData> get meters => Map.unmodifiable(_meters);
+  @override
   List<MeterData> get meterList => _meters.values.toList();
   int get baudRate => _baudRate;
   MBusCommandOption get selectedCommand => _selectedCommand;
@@ -108,10 +105,12 @@ class DeviceProvider extends ChangeNotifier {
   String get daireIds => _daireIds;
   int get primaryStart => _primaryStart;
   int get primaryEnd => _primaryEnd;
+  @override
   ReadingMode get selectedReadingMode => _selectedReadingMode;
   String get readingStatus => _readingStatus;
   bool get isPaused => _isPaused;
   bool get isStopped => _isStopped;
+  @override
   String get siteName => _siteName;
   bool get isSoundEnabled => _isSoundEnabled;
   int get activeIndex => _activeIndex;
@@ -139,7 +138,25 @@ class DeviceProvider extends ChangeNotifier {
 
   void setSiteName(String value) {
     _siteName = value;
+    _updateFirebaseSiteData();
     notifyListeners();
+  }
+
+  void _updateFirebaseSiteData() {
+    if (kIsWeb) return;
+    final data = SiteData(
+      siteId: siteId,
+      siteName: _siteName,
+      readingMode: _selectedReadingMode.name,
+      status: _isReading ? 'reading' : 'idle',
+      lastUpdated: DateTime.now(),
+      createdAt: DateTime.now(),
+      totalMeters: _meters.length,
+      readCount: _meters.values.where((m) => m.overallStatus == MeterStatus.success).length,
+    );
+    _firebaseService.updateSiteData(siteId, data).catchError((e) {
+      if (kDebugMode) debugPrint("Firebase sync error: $e");
+    });
   }
 
   void setBaudRate(int value) {
@@ -179,6 +196,7 @@ class DeviceProvider extends ChangeNotifier {
 
   void setReadingMode(ReadingMode value) {
     _selectedReadingMode = value;
+    _updateFirebaseSiteData();
     notifyListeners();
   }
 
@@ -217,8 +235,6 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Cihaz Tarama ───────────────────────────────────────────────────────────
-
   Future<void> scanDevices() async {
     try {
       _devices = await _service.listDevices();
@@ -231,12 +247,10 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  void selectDevice(UsbDevice device) {
+  void selectDevice(dynamic device) {
     _selectedDevice = device;
     notifyListeners();
   }
-
-  // ── Bağlantı ───────────────────────────────────────────────────────────────
 
   Future<void> connect() async {
     if (_selectedDevice == null) {
@@ -273,8 +287,6 @@ class DeviceProvider extends ChangeNotifier {
     _addLog('🔴 Bağlantı kesildi.');
   }
 
-  // ── Veri Gönderme ──────────────────────────────────────────────────────────
-
   Future<void> readMeters() async {
     if (!isConnected) {
       _addLog('⚠️ Cihaz bağlı değil!');
@@ -305,7 +317,7 @@ class DeviceProvider extends ChangeNotifier {
 
       try {
         int readCount = 0;
-        final totalMeters = heatTargets.where((e) => e.isNotEmpty).length + waterTargets.where((e) => e.isNotEmpty).length; // Tam doğru olmayabilir ama progress için idare eder
+        final totalMeters = heatTargets.where((e) => e.isNotEmpty).length + waterTargets.where((e) => e.isNotEmpty).length;
 
         for (int i = 0; i < maxLines; i++) {
           if (_isStopped) break;
@@ -317,7 +329,6 @@ class DeviceProvider extends ChangeNotifier {
             if (_isStopped) break;
           }
 
-          // Daire numarasını Excel'den gelen listeden veya satır numarasından alalım
           dynamic daire;
           if (i < daireTargets.length && daireTargets[i].isNotEmpty) {
             daire = int.tryParse(daireTargets[i]) ?? daireTargets[i];
@@ -325,7 +336,6 @@ class DeviceProvider extends ChangeNotifier {
             daire = i + 1;
           }
           
-          // 1. Isı Sayacı Okuma
           if (_selectedReadingMode == ReadingMode.heat || _selectedReadingMode == ReadingMode.both) {
             String targetSerial = i < heatTargets.length ? heatTargets[i].trim() : '';
             
@@ -354,7 +364,6 @@ class DeviceProvider extends ChangeNotifier {
                 await Future.delayed(const Duration(milliseconds: 300));
               }
             } else if (i < heatTargets.length) {
-              // Seri no boşsa doğrudan "Okunamadı" ve "Seri No Bulunamadı" olarak işaretle
               _handleFailedRead(daire.toString(), '', MeterType.heat, 
                   i < waterTargets.length ? waterTargets[i] : '');
               _addLog('⚠️ Daire $daire: Isı sayacı seri no boş, okuma atlandı.');
@@ -371,7 +380,6 @@ class DeviceProvider extends ChangeNotifier {
             if (_isStopped) break;
           }
 
-          // 2. Sıcak Su Sayacı Okuma
           if (_selectedReadingMode == ReadingMode.water || _selectedReadingMode == ReadingMode.both) {
             String targetSerial = i < waterTargets.length ? waterTargets[i].trim() : '';
             
@@ -399,7 +407,6 @@ class DeviceProvider extends ChangeNotifier {
                 await Future.delayed(const Duration(milliseconds: 300));
               }
             } else if (i < waterTargets.length) {
-              // Seri no boşsa doğrudan "Okunamadı" ve "Seri No Bulunamadı" olarak işaretle
               _handleFailedRead(daire.toString(), '', MeterType.water, 
                   i < heatTargets.length ? heatTargets[i] : '');
               _addLog('⚠️ Daire $daire: Su sayacı seri no boş, okuma atlandı.');
@@ -460,7 +467,6 @@ class DeviceProvider extends ChangeNotifier {
       return;
     }
 
-    // Normal Okuma
     _isReading = true;
     _rxBuffer.clear();
     _timeoutTimer?.cancel();
@@ -472,7 +478,6 @@ class DeviceProvider extends ChangeNotifier {
       _addLog('📤 Gönderiliyor (${_selectedCommand.label}): $cmdStr');
       await _service.write(Uint8List.fromList(_selectedCommand.command));
 
-      // 2 Saniye Timeout başlat
       _timeoutTimer = Timer(const Duration(seconds: 2), () {
         if (_isReading) {
           _isReading = false;
@@ -523,7 +528,6 @@ class DeviceProvider extends ChangeNotifier {
 
           readCount++;
           
-          // Isı Sayacı Tekrar Dene
           if ((_selectedReadingMode == ReadingMode.heat || _selectedReadingMode == ReadingMode.both) && failedMeter.heatMeterId.isNotEmpty) {
             _activeIndex = _meters.values.toList().indexOf(failedMeter);
             _readingStatus = 'Tekrar Okunuyor (Isı): ${failedMeter.heatMeterId}... ($readCount/$totalMeters)';
@@ -532,7 +536,6 @@ class DeviceProvider extends ChangeNotifier {
             await _readSingleSecondary(failedMeter.heatMeterId);
           }
 
-          // Su Sayacı Tekrar Dene
           if ((_selectedReadingMode == ReadingMode.water || _selectedReadingMode == ReadingMode.both) && failedMeter.waterMeterId.isNotEmpty) {
             _readingStatus = 'Tekrar Okunuyor (Su): ${failedMeter.waterMeterId}... ($readCount/$totalMeters)';
             _selectedMeterType = MeterType.water;
@@ -561,23 +564,9 @@ class DeviceProvider extends ChangeNotifier {
 
   Future<bool> importFromExcel() async {
     try {
-      fp.FilePickerResult? result = await fp.FilePicker.platform.pickFiles(
-        type: fp.FileType.custom,
-        allowedExtensions: ['xlsx'],
-        withData: true,
-      );
+      final Uint8List? bytes = await ExcelService.pickAndReadExcel();
 
-      if (result != null) {
-        Uint8List? bytes;
-        if (kIsWeb) {
-          bytes = result.files.single.bytes;
-        } else {
-          final file = File(result.files.single.path!);
-          bytes = await file.readAsBytes();
-        }
-
-        if (bytes == null) return false;
-
+      if (bytes != null) {
         final parsedData = await compute(_parseExcelBytes, bytes);
 
         _daireIds = parsedData.daireList.join("\n");
@@ -596,7 +585,6 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-
   Future<bool> _readSingleSecondary(String targetSerial) async {
     _rxBuffer.clear();
     _readCompleter = Completer<bool>();
@@ -607,26 +595,22 @@ class DeviceProvider extends ChangeNotifier {
     _timeoutTimer?.cancel();
 
     try {
-      // İkincil Adresleme Algoritması
       final b1 = int.parse(targetSerial.substring(6, 8), radix: 16);
       final b2 = int.parse(targetSerial.substring(4, 6), radix: 16);
       final b3 = int.parse(targetSerial.substring(2, 4), radix: 16);
       final b4 = int.parse(targetSerial.substring(0, 2), radix: 16);
 
-      // Adım A (Ping)
       final wakeupCmd = [0x10, 0x40, 0xFE, 0x3E, 0x16];
       _addLog('📤 UYANDIRMA: 10 40 FE 3E 16');
       await _service.write(Uint8List.fromList(wakeupCmd));
       _addLog('Ping gönderildi, 1sn bekleniyor');
       await Future.delayed(const Duration(milliseconds: 1000));
 
-      // Adım B (Sıfırlama)
       final resetCmd = [0x10, 0x40, 0xFD, 0x3D, 0x16];
       _addLog('📤 SIFIRLAMA: 10 40 FD 3D 16');
       await _service.write(Uint8List.fromList(resetCmd));
       await Future.delayed(const Duration(milliseconds: 600));
 
-      // Selection Frame Oluştur
       final baseFrame = [0x68, 0x0B, 0x0B, 0x68, 0x53, 0xFD, 0x52, b1, b2, b3, b4, 0xFF, 0xFF, 0xFF, 0xFF];
       int cs = 0;
       for (int i = 4; i < baseFrame.length; i++) {
@@ -634,11 +618,9 @@ class DeviceProvider extends ChangeNotifier {
       }
       final selectionFrame = [...baseFrame, cs, 0x16];
 
-      // Adım B: Seçim Çerçevesini Gönder
       _addLog('📤 Seçim Çerçevesi ($targetSerial): ${_toHexString(Uint8List.fromList(selectionFrame))}');
       await _service.write(Uint8List.fromList(selectionFrame));
 
-      // Adım C: E5 (ACK) bekle (500ms)
       bool e5Received = false;
       _e5Completer = Completer<bool>();
       try {
@@ -647,7 +629,6 @@ class DeviceProvider extends ChangeNotifier {
         e5Received = false;
       }
 
-      // Adım D (Retry Mekanizması)
       if (!e5Received) {
         _addLog('⏳ E5 alınamadı, sayaç derin uykuda olabilir. 500ms bekleniyor...');
         await Future.delayed(const Duration(milliseconds: 500));
@@ -671,12 +652,10 @@ class DeviceProvider extends ChangeNotifier {
 
       await Future.delayed(const Duration(milliseconds: 400));
 
-      // Okuma Komutunu Gönder (FD adresli - FCB bit 7B)
       final readCmd7B = [0x10, 0x7B, 0xFD, 0x78, 0x16];
       _addLog('📤 Okuma Komutu (FD - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}');
       await _service.write(Uint8List.fromList(readCmd7B));
 
-      // 2 Saniye Timeout başlat ve retry mekanizması
       _timeoutTimer = Timer(const Duration(seconds: 2), () async {
         if (!_readCompleter!.isCompleted) {
           _addLog('⏳ 7B Komutuna cevap yok, 5B ile tekrar deneniyor...');
@@ -709,20 +688,17 @@ class DeviceProvider extends ChangeNotifier {
     _timeoutTimer?.cancel();
 
     try {
-      // SND_NKE (Reset) Komutu gönder ve 150ms bekle
       final resetCmd = [0x10, 0x40, addr, 0x00, 0x16];
       resetCmd[3] = (0x40 + addr) % 256;
       _addLog('📤 Sıfırlama (Reset) Adres $addr: ${_toHexString(Uint8List.fromList(resetCmd))}');
       await _service.write(Uint8List.fromList(resetCmd));
       await Future.delayed(const Duration(milliseconds: 150));
 
-      // Okuma Komutunu Gönder (addr - FCB bit 7B)
       final readCmd7B = [0x10, 0x7B, addr, 0x00, 0x16];
       readCmd7B[3] = (0x7B + addr) % 256;
       _addLog('📤 Okuma Komutu ($addr - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}');
       await _service.write(Uint8List.fromList(readCmd7B));
 
-      // 2 Saniye Timeout başlat ve retry mekanizması
       _timeoutTimer = Timer(const Duration(seconds: 2), () async {
         if (!_readCompleter!.isCompleted) {
           _addLog('⏳ 7B Komutuna cevap yok, 5B ile tekrar deneniyor...');
@@ -756,7 +732,6 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Manuel sayaç girişi — sonuç listesine doğrudan ekler
   void addManualMeter({
     required String daireNo,
     required String heatMeterId,
@@ -780,15 +755,17 @@ class DeviceProvider extends ChangeNotifier {
       readTime: DateTime.now(),
     );
     saveSession();
+    if (!kIsWeb) {
+      _firebaseService.updateMeterData(siteId, key, _meters[key]!).catchError((e){
+        if (kDebugMode) debugPrint("Firebase sync error: $e");
+      });
+    }
     notifyListeners();
   }
-
-  // ── Veri Dinleme & Parse ───────────────────────────────────────────────────
 
   void _startListening() {
     _dataSubscription = _service.dataStream.listen(
       (Uint8List data) {
-        // Buffer'a ekle ve havuzu kontrol et
         _rxBuffer.addAll(data);
         _processBuffer();
       },
@@ -804,7 +781,6 @@ class DeviceProvider extends ChangeNotifier {
     bool hasChanges = false;
 
     while (_rxBuffer.isNotEmpty) {
-      // 1. Havuzun ilk elemanı 0x68 değilse, baştaki elemanları sil (havuzu temizle).
       if (_rxBuffer[0] != 0x68) {
         if (_rxBuffer[0] == 0xE5) {
           _addLog('📥 Tam Paket: E5');
@@ -816,32 +792,24 @@ class DeviceProvider extends ChangeNotifier {
         continue;
       }
 
-      // 2. İlk eleman 0x68 ise, 2. ve 3. elemanlar (L1, L2) uzunluk bilgisini içerir.
       if (_rxBuffer.length < 4) {
-        // L ve 2. 0x68 değerini okuyacak kadar veri yok, bekle
         break;
       }
 
       final l1 = _rxBuffer[1];
       final l2 = _rxBuffer[2];
       
-      // M-Bus kuralları: L1 ve L2 eşit olmalı, ve 4. byte 0x68 olmalı
       if (l1 != l2 || _rxBuffer[3] != 0x68) {
-        // Hatalı başlangıç, ilk byte'ı atla ve aramaya devam et
         _addLog('⚠️ Hatalı Başlangıç Çerçevesi (l1 != l2 veya eksik 0x68). Kaydırılıyor...');
         _rxBuffer.removeAt(0);
         continue;
       }
 
-      // 3. Tam bir M-Bus paketinin uzunluğu: L + 6 byte'tır.
       final totalLength = l1 + 6;
 
-      // 4. Eğer _rxBuffer.length >= totalLength ise, elimizde tam bir paket var demektir!
       if (_rxBuffer.length >= totalLength) {
-        // Paketin son baytı 0x16 olmalıdır
         if (_rxBuffer[totalLength - 1] == 0x16) {
           
-          // CRC Kontrolü: 4. indexten totalLength - 2 indexine kadar olan baytların toplamı modulo 256
           int cs = 0;
           for (int i = 4; i < totalLength - 2; i++) {
             cs = (cs + _rxBuffer[i]) % 256;
@@ -871,7 +839,6 @@ class DeviceProvider extends ChangeNotifier {
                     existing.waterStatus = MeterStatus.success;
                   }
 
-                  // Genel durumu güncelle: Her iki sayaç da başarılıysa success, aksi halde bekliyor/hata
                   if (existing.heatStatus == MeterStatus.success && existing.waterStatus == MeterStatus.success) {
                     existing.overallStatus = MeterStatus.success;
                   } else if (existing.heatStatus == MeterStatus.failed || existing.waterStatus == MeterStatus.failed) {
@@ -888,15 +855,21 @@ class DeviceProvider extends ChangeNotifier {
                     waterMeterId: _selectedMeterType == MeterType.water ? meterData.meterId : '',
                     waterIndex: _selectedMeterType == MeterType.water ? _formatWaterIndex(meterData.volume) : '0.0',
                     waterStatus: _selectedMeterType == MeterType.water ? MeterStatus.success : MeterStatus.pending,
-                    overallStatus: MeterStatus.pending, // Henüz tek sayaç okundu
+                    overallStatus: MeterStatus.pending,
                     type: _selectedMeterType,
                     readTime: DateTime.now(),
                   );
                 }
 
+                if (!kIsWeb) {
+                  _firebaseService.updateMeterData(siteId, flatNo, _meters[flatNo]!).catchError((e){
+                    if (kDebugMode) debugPrint("Firebase sync error: $e");
+                  });
+                }
+
                 _addLog('🔍 Sayaç parse edildi → ID: ${meterData.meterId}');
                 hasChanges = true;
-                
+
                 if (_readCompleter != null && !_readCompleter!.isCompleted) {
                   _readCompleter!.complete(true);
                 }
@@ -905,29 +878,24 @@ class DeviceProvider extends ChangeNotifier {
               _addLog('❌ Parse hatası: $e');
             }
           } else {
-            // CRC Hatalı
             _addLog('⚠️ CRC Hatalı (Beklenen: 0x${cs.toRadixString(16).padLeft(2, '0').toUpperCase()}, Gelen: 0x${_rxBuffer[totalLength - 2].toRadixString(16).padLeft(2, '0').toUpperCase()}). Kaydırılıyor...');
-            _rxBuffer.removeAt(0); // İlk baytı atıp aramaya devam et (Sliding window)
+            _rxBuffer.removeAt(0);
             continue;
           }
         } else {
-          // Bitiş biti 0x16 değil
           _addLog('⚠️ Hatalı Çerçeve Bitişi: 0x${_rxBuffer[totalLength - 1].toRadixString(16).padLeft(2, '0').toUpperCase()}. Kaydırılıyor...');
-          _rxBuffer.removeAt(0); // İlk baytı atıp aramaya devam et
+          _rxBuffer.removeAt(0);
           continue;
         }
 
-        // İşlenen bu paketi _rxBuffer'dan sil
         _rxBuffer.removeRange(0, totalLength);
 
-        // Parser başarılı olduğunda okuma (yüklenme) animasyonunu durdur
         if (hasChanges && _isReading) {
           _timeoutTimer?.cancel();
           _isReading = false;
         }
 
       } else {
-        // Paketin tamamı henüz gelmedi, yeni verileri bekle
         break;
       }
     }
@@ -941,14 +909,11 @@ class DeviceProvider extends ChangeNotifier {
   String _formatHeatIndex(double val) {
     if (val == 0) return "0";
     
-    // Eğer değer çok büyükse Wh gönderiliyordur, kWh'ye çevir (1000'e böl)
     double energy = val;
     if (val > 100000) {
       energy = val / 1000;
     }
     
-    // Değeri string olarak döndür. meter_data.dart'ta nokta kaldırılacak.
-    // Eğer tamsayı ise ".0" eklenmesini engellemek için kontrol et.
     if (energy == energy.toInt()) {
       return energy.toInt().toString();
     }
@@ -956,25 +921,19 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   String _formatWaterIndex(double val) {
-    // Su sayaçlarında anlamlı küsuratlar önemli (m3)
-    // toStringAsFixed(3) yapıp sondaki gereksiz sıfırları temizleyelim
     String str = val.toStringAsFixed(3);
     if (str.contains('.')) {
-      str = str.replaceAll(RegExp(r'0*$'), ''); // Sondaki sıfırları sil
-      str = str.replaceAll(RegExp(r'\.$'), ''); // Eğer nokta kaldıysa onu da sil
+      str = str.replaceAll(RegExp(r'0*$'), '');
+      str = str.replaceAll(RegExp(r'\.$'), '');
     }
     return str;
   }
 
-  // ── Oturum Kurtarma (Persistence) ──────────────────────────────────────────
-
-  /// Top-level veya static fonksiyon olarak Isolate içinde çalışacak serileştirme işlemi
   static String _serializeSession(Map<String, dynamic> data) {
     return jsonEncode(data);
   }
 
   Future<void> saveSession({bool immediate = false}) async {
-    // Debounce: immediate true ise beklemeyi iptal et ve anında kaydet
     if (immediate) {
       _saveTimer?.cancel();
       await _performSave();
@@ -1008,11 +967,11 @@ class DeviceProvider extends ChangeNotifier {
       await prefs.setString('sayac_pro_session', encodedData);
       
       if (kDebugMode) {
-        print('💾 Oturum kaydedildi.');
+        debugPrint('💾 Oturum kaydedildi.');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ Oturum kaydedilemedi: $e');
+        debugPrint('⚠️ Oturum kaydedilemedi: $e');
       }
     }
   }
@@ -1060,7 +1019,6 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  /// Başarısız okumaları yöneten yardımcı metod
   void _handleFailedRead(String flatNo, String currentSerial, MeterType type, String otherSerial) {
     if (!_meters.containsKey(flatNo)) {
       _meters[flatNo] = MeterData(
@@ -1087,16 +1045,18 @@ class DeviceProvider extends ChangeNotifier {
       meter.overallStatus = MeterStatus.failed;
       meter.readTime = DateTime.now();
     }
+
+    if (!kIsWeb) {
+      _firebaseService.updateMeterData(siteId, flatNo, _meters[flatNo]!).catchError((e){
+        if (kDebugMode) debugPrint("Firebase sync error: $e");
+      });
+    }
     notifyListeners();
   }
-
-  // ── Yardımcı Metodlar ──────────────────────────────────────────────────────
 
   String _toHexString(Uint8List bytes) {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
   }
-
-
 
   void _addLog(String line) {
     _logLines.add(line);

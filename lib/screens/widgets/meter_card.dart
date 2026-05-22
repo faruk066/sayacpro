@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/device_provider.dart';
+import '../../providers/app_data_provider.dart';
+import '../../models/meter_data.dart';
 
 class MeterCard extends StatelessWidget {
   final String daireNo;
@@ -13,15 +14,14 @@ class MeterCard extends StatelessWidget {
     required this.daireNo,
     required this.isiEndeks,
     required this.suEndeks,
-    this.isSuccess = true, // Okuma durumuna göre true/false gönderirsin
+    this.isSuccess = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Selector<DeviceProvider, ReadingMode>(
+    return Selector<AppDataProvider, ReadingMode>(
       selector: (_, p) => p.selectedReadingMode,
       builder: (context, mode, _) {
-        // Rozet durumu için double-check mantığı
         bool calculatedSuccess = isSuccess;
         if (mode == ReadingMode.heat) {
       calculatedSuccess = isiEndeks != "Okunamadı" && isiEndeks.isNotEmpty;
@@ -32,13 +32,12 @@ class MeterCard extends StatelessWidget {
                           (suEndeks != "Okunamadı" && suEndeks.isNotEmpty);
     }
 
-    // Terminalden aldığımız SaaS Pro Max Renk Paleti
-    const Color bgSurface = Color(0xFF1E293B); // Secondary
-    const Color borderColor = Color(0xFF334155); // Border
-    const Color textMain = Color(0xFFF8FAFC); // Foreground
-    const Color textMuted = Color(0xFF94A3B8); // Muted text for labels
-    const Color accentGreen = Color(0xFF22C55E); // Success / CTA
-    const Color accentRed = Color(0xFFEF4444); // Destructive
+    const Color bgSurface = Color(0xFF1E293B);
+    const Color borderColor = Color(0xFF334155);
+    const Color textMain = Color(0xFFF8FAFC);
+    const Color textMuted = Color(0xFF94A3B8);
+    const Color accentGreen = Color(0xFF22C55E);
+    const Color accentRed = Color(0xFFEF4444);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -58,7 +57,6 @@ class MeterCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ÜST KISIM: Daire No ve Durum Rozeti
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -72,7 +70,6 @@ class MeterCard extends StatelessWidget {
                       color: textMain,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      // fontFamily: 'Fira Sans', // GoogleFonts eklersen açarsın
                     ),
                   ),
                 ],
@@ -119,10 +116,8 @@ class MeterCard extends StatelessWidget {
             child: Divider(color: borderColor, height: 1),
           ),
 
-          // ALT KISIM: Isı ve Su Verileri (Asla Taşmaz - Expanded ve FittedBox)
           Row(
             children: [
-              // Isı Sayacı Bloğu
               if (mode == ReadingMode.heat || mode == ReadingMode.both)
                 Expanded(
                   child: Column(
@@ -156,7 +151,6 @@ class MeterCard extends StatelessWidget {
                             color: textMain,
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            // fontFamily: 'Fira Code', // Sayılar için teknik font
                           ),
                         ),
                       ),
@@ -164,7 +158,6 @@ class MeterCard extends StatelessWidget {
                   ),
                 ),
 
-              // Araya dikey çizgi
               if (mode == ReadingMode.both)
                 Container(
                   height: 40,
@@ -173,7 +166,6 @@ class MeterCard extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                 ),
 
-              // Su Sayacı Bloğu
               if (mode == ReadingMode.water || mode == ReadingMode.both)
                 Expanded(
                   child: Column(
