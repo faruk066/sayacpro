@@ -28,14 +28,18 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<AppDataProvider>(
-          create: (_) => kIsWeb ? CloudProvider() : DeviceProvider(),
-        ),
         ChangeNotifierProvider(create: (_) => DeviceProvider()),
         ChangeNotifierProvider(create: (_) => CloudProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: const SayacProApp(),
+      child: Builder(
+        builder: (context) {
+          return ChangeNotifierProvider<AppDataProvider>.value(
+            value: kIsWeb ? context.read<CloudProvider>() : context.read<DeviceProvider>(),
+            child: const SayacProApp(),
+          );
+        },
+      ),
     ),
   );
 }
