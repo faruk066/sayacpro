@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- USB cihaz filtresi - M-Bus converter cihazları için -->
+<!-- vendor-id ve product-id boş bırakılırsa tüm USB cihazlar eşleşir -->
+<resources>
+    <usb-device />
+</resources>
