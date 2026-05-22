@@ -477,13 +477,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Veri Girişi Bölümü ─────────────────────────────────────────────────────
 
   Widget _buildInputSection() {
-    final provider = context.read<DeviceProvider>();
-    return Selector<DeviceProvider, (String, String, String)>(
-      selector: (_, p) => (p.heatSecondaryIds, p.waterSecondaryIds, p.daireIds),
+    return Selector<DeviceProvider, (String, String, String, ReadingMode)>(
+      selector: (_, p) => (p.heatSecondaryIds, p.waterSecondaryIds, p.daireIds, p.selectedReadingMode),
       builder: (context, data, _) {
         final heatSecondaryIds = data.$1;
         final waterSecondaryIds = data.$2;
         final daireIds = data.$3;
+        final selectedReadingMode = data.$4;
 
         int heatLines = heatSecondaryIds.split('\n').length;
         int waterLines = waterSecondaryIds.split('\n').length;
@@ -520,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // ── Satır Widget'ı ──────────────────────────────────────────────────
         Widget buildDataRow(int i) {
-          final mode = provider.selectedReadingMode;
+          final mode = selectedReadingMode;
           return Container(
             height: 48, // Sabit yükseklik — uzun metin bile satırı kaydıramaz
             decoration: BoxDecoration(
@@ -837,7 +837,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                         ),
-                                        if (provider.selectedReadingMode == ReadingMode.heat || provider.selectedReadingMode == ReadingMode.both)
+                                        if (selectedReadingMode == ReadingMode.heat || selectedReadingMode == ReadingMode.both)
                                           Expanded(
                                             flex: flexSayac,
                                             child: Text(
@@ -851,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                             ),
                                           ),
-                                        if (provider.selectedReadingMode == ReadingMode.water || provider.selectedReadingMode == ReadingMode.both)
+                                        if (selectedReadingMode == ReadingMode.water || selectedReadingMode == ReadingMode.both)
                                           Expanded(
                                             flex: flexSayac,
                                             child: Text(

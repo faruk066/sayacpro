@@ -18,13 +18,12 @@ class MeterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch selected reading mode
-    final provider = context.watch<DeviceProvider>();
-    final mode = provider.selectedReadingMode;
-
-    // Rozet durumu için double-check mantığı
-    bool calculatedSuccess = isSuccess;
-    if (mode == ReadingMode.heat) {
+    return Selector<DeviceProvider, ReadingMode>(
+      selector: (_, p) => p.selectedReadingMode,
+      builder: (context, mode, _) {
+        // Rozet durumu için double-check mantığı
+        bool calculatedSuccess = isSuccess;
+        if (mode == ReadingMode.heat) {
       calculatedSuccess = isiEndeks != "Okunamadı" && isiEndeks.isNotEmpty;
     } else if (mode == ReadingMode.water) {
       calculatedSuccess = suEndeks != "Okunamadı" && suEndeks.isNotEmpty;
@@ -218,6 +217,8 @@ class MeterCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+      },
     );
   }
 }
