@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
+import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase_service.dart';
 import '../models/site_data.dart';
@@ -959,7 +960,7 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> _performSave() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final secureStorage = const FlutterSecureStorage();
       
       final List<Map<String, dynamic>> metersJson = _meters.values
           .map((m) => m.toJson())
@@ -975,7 +976,7 @@ class DeviceProvider extends AppDataProvider {
       };
 
       final String encodedData = await compute(_serializeSession, sessionData);
-      await prefs.setString('sayac_pro_session', encodedData);
+      await secureStorage.write(key: 'sayac_pro_session', value: encodedData);
       
       if (kDebugMode) {
         debugPrint('💾 Oturum kaydedildi.');
@@ -989,8 +990,16 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> loadSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? sessionJson = prefs.getString('sayac_pro_session');
+      final secureStorage = const FlutterSecureStorage();
+      String? sessionJson = await secureStorage.read(key: 'sayac_pro_session');
+      if (sessionJson == null) {
+        final prefs = await SharedPreferences.getInstance();
+        sessionJson = prefs.getString('sayac_pro_session');
+        if (sessionJson != null) {
+          await secureStorage.write(key: 'sayac_pro_session', value: sessionJson);
+          await prefs.remove('sayac_pro_session');
+        }
+      }
       
       if (sessionJson == null) return;
 
@@ -1022,8 +1031,8 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> clearSessionData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('sayac_pro_session');
+      final secureStorage = const FlutterSecureStorage();
+      await secureStorage.delete(key: 'sayac_pro_session');
       _addLog('🗑️ Oturum verileri temizlendi.');
     } catch (e) {
       _addLog('⚠️ Oturum verileri temizlenemedi: $e');
