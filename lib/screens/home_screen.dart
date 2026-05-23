@@ -20,7 +20,6 @@ import '../services/excel_service.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
@@ -1537,8 +1536,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isScrolling = false;
 
   void _scrollToIndex(int index) {
-    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused)
+    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused) {
       return;
+    }
 
     double itemHeight = 115.0;
     double topOffset = 650.0;
