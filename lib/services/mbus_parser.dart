@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 class MBusRawData {
   final String meterId;
   final double energy;
@@ -148,19 +150,6 @@ class MBusParser {
   }
 
   static double _pow10(int exponent) {
-    if (exponent == 0) return 1.0;
-    if (exponent > 0) {
-      double res = 1.0;
-      for (int i = 0; i < exponent; i++) {
-        res *= 10;
-      }
-      return res;
-    } else {
-      double res = 1.0;
-      for (int i = 0; i < -exponent; i++) {
-        res /= 10;
-      }
-      return res;
-    }
+    return math.pow(10.0, exponent).toDouble();
   }
 }
