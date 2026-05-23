@@ -7,6 +7,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase_service.dart';
 import '../models/site_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../services/mbus/connection_status.dart';
 import '../services/mbus/mbus_interface.dart';
 import '../services/mbus/mbus_stub.dart';
@@ -25,7 +27,9 @@ class MBusCommandOption {
   const MBusCommandOption(this.label, this.command);
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is MBusCommandOption && label == other.label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MBusCommandOption && label == other.label;
 
   @override
   int get hashCode => label.hashCode;
@@ -34,7 +38,7 @@ class MBusCommandOption {
 class DeviceProvider extends AppDataProvider {
   final MBusInterface _service = getMBusService();
   final FirebaseService _firebaseService = FirebaseService();
-  
+
   final List<MBusCommandOption> addressOptions = const [
     MBusCommandOption('Tümü (FE - Broadcast)', [0x10, 0x5B, 0xFE, 0x59, 0x16]),
     MBusCommandOption('Adres 00 (Sıfır Sayaç)', [0x10, 0x5B, 0x00, 0x5B, 0x16]),
@@ -77,7 +81,9 @@ class DeviceProvider extends AppDataProvider {
   Completer<void>? _pauseCompleter;
 
   String _siteName = '';
-  String get siteId => _siteName.isEmpty ? 'default_site' : _siteName.replaceAll(' ', '_').toLowerCase();
+  String get siteId => _siteName.isEmpty
+      ? 'default_site'
+      : _siteName.replaceAll(' ', '_').toLowerCase();
   String _currentReadingFlat = '';
   final Map<String, int> _expectedDaireNo = {};
 
@@ -152,7 +158,9 @@ class DeviceProvider extends AppDataProvider {
       lastUpdated: DateTime.now(),
       createdAt: DateTime.now(),
       totalMeters: _meters.length,
-      readCount: _meters.values.where((m) => m.overallStatus == MeterStatus.success).length,
+      readCount: _meters.values
+          .where((m) => m.overallStatus == MeterStatus.success)
+          .length,
     );
     _firebaseService.updateSiteData(siteId, data).catchError((e) {
       if (kDebugMode) debugPrint("Firebase sync error: $e");
@@ -259,10 +267,15 @@ class DeviceProvider extends AppDataProvider {
     }
 
     _setStatus(ConnectionStatus.connecting);
-    _addLog('🔌 Bağlanılıyor: ${_selectedDevice!.productName ?? _selectedDevice!.deviceName}...');
+    _addLog(
+      '🔌 Bağlanılıyor: ${_selectedDevice!.productName ?? _selectedDevice!.deviceName}...',
+    );
 
     try {
-      final success = await _service.connect(_selectedDevice!, baudRate: _baudRate);
+      final success = await _service.connect(
+        _selectedDevice!,
+        baudRate: _baudRate,
+      );
       if (success) {
         _setStatus(ConnectionStatus.connected);
         _addLog('✅ Bağlantı kuruldu. ($_baudRate/8/E/1)');
@@ -294,13 +307,28 @@ class DeviceProvider extends AppDataProvider {
     }
 
     if (_selectedCommand.label == 'İkincil Adres (Seri No ile)') {
-      final heatTargets = _heatSecondaryIds.split(RegExp(r'\r?\n')).map((e) => e.trim()).toList();
-      final waterTargets = _waterSecondaryIds.split(RegExp(r'\r?\n')).map((e) => e.trim()).toList();
-      final daireTargets = _daireIds.split(RegExp(r'\r?\n')).map((e) => e.trim()).toList();
-      
-      final maxLines = [heatTargets.length, waterTargets.length, daireTargets.length].reduce((a, b) => a > b ? a : b);
-      
-      if (maxLines == 0 || (heatTargets.where((e) => e.isNotEmpty).isEmpty && waterTargets.where((e) => e.isNotEmpty).isEmpty)) {
+      final heatTargets = _heatSecondaryIds
+          .split(RegExp(r'\r?\n'))
+          .map((e) => e.trim())
+          .toList();
+      final waterTargets = _waterSecondaryIds
+          .split(RegExp(r'\r?\n'))
+          .map((e) => e.trim())
+          .toList();
+      final daireTargets = _daireIds
+          .split(RegExp(r'\r?\n'))
+          .map((e) => e.trim())
+          .toList();
+
+      final maxLines = [
+        heatTargets.length,
+        waterTargets.length,
+        daireTargets.length,
+      ].reduce((a, b) => a > b ? a : b);
+
+      if (maxLines == 0 ||
+          (heatTargets.where((e) => e.isNotEmpty).isEmpty &&
+              waterTargets.where((e) => e.isNotEmpty).isEmpty)) {
         _addLog('⚠️ Liste boş. Lütfen seri numarası girin.');
         return;
       }
@@ -324,7 +352,9 @@ class DeviceProvider extends AppDataProvider {
 
       try {
         int readCount = 0;
-        final totalMeters = heatTargets.where((e) => e.isNotEmpty).length + waterTargets.where((e) => e.isNotEmpty).length;
+        final totalMeters =
+            heatTargets.where((e) => e.isNotEmpty).length +
+            waterTargets.where((e) => e.isNotEmpty).length;
 
         for (int i = 0; i < maxLines; i++) {
           if (_isStopped) break;
@@ -342,25 +372,33 @@ class DeviceProvider extends AppDataProvider {
           } else {
             daire = i + 1;
           }
-          
-          if (_selectedReadingMode == ReadingMode.heat || _selectedReadingMode == ReadingMode.both) {
-            String targetSerial = i < heatTargets.length ? heatTargets[i].trim() : '';
-            
+
+          if (_selectedReadingMode == ReadingMode.heat ||
+              _selectedReadingMode == ReadingMode.both) {
+            String targetSerial = i < heatTargets.length
+                ? heatTargets[i].trim()
+                : '';
+
             if (targetSerial.isNotEmpty) {
               _activeIndex = i;
               _currentReadingFlat = daire.toString();
               targetSerial = targetSerial.padLeft(8, '0');
               _expectedDaireNo[targetSerial] = daire;
-              
+
               readCount++;
-              _readingStatus = 'Okunuyor (Isı): $targetSerial... ($readCount/$totalMeters)';
+              _readingStatus =
+                  'Okunuyor (Isı): $targetSerial... ($readCount/$totalMeters)';
               _selectedMeterType = MeterType.heat;
               notifyListeners();
-              
+
               bool success = await _readSingleSecondary(targetSerial);
               if (!success) {
-                _handleFailedRead(daire.toString(), targetSerial, MeterType.heat, 
-                    i < waterTargets.length ? waterTargets[i] : '');
+                _handleFailedRead(
+                  daire.toString(),
+                  targetSerial,
+                  MeterType.heat,
+                  i < waterTargets.length ? waterTargets[i] : '',
+                );
                 _playSound('error');
               } else {
                 _playSound('success');
@@ -371,9 +409,15 @@ class DeviceProvider extends AppDataProvider {
                 await Future.delayed(const Duration(milliseconds: 300));
               }
             } else if (i < heatTargets.length) {
-              _handleFailedRead(daire.toString(), '', MeterType.heat, 
-                  i < waterTargets.length ? waterTargets[i] : '');
-              _addLog('⚠️ Daire $daire: Isı sayacı seri no boş, okuma atlandı.');
+              _handleFailedRead(
+                daire.toString(),
+                '',
+                MeterType.heat,
+                i < waterTargets.length ? waterTargets[i] : '',
+              );
+              _addLog(
+                '⚠️ Daire $daire: Isı sayacı seri no boş, okuma atlandı.',
+              );
               saveSession();
             }
           }
@@ -387,24 +431,32 @@ class DeviceProvider extends AppDataProvider {
             if (_isStopped) break;
           }
 
-          if (_selectedReadingMode == ReadingMode.water || _selectedReadingMode == ReadingMode.both) {
-            String targetSerial = i < waterTargets.length ? waterTargets[i].trim() : '';
-            
+          if (_selectedReadingMode == ReadingMode.water ||
+              _selectedReadingMode == ReadingMode.both) {
+            String targetSerial = i < waterTargets.length
+                ? waterTargets[i].trim()
+                : '';
+
             if (targetSerial.isNotEmpty) {
               _activeIndex = i;
               _currentReadingFlat = daire.toString();
               targetSerial = targetSerial.padLeft(8, '0');
               _expectedDaireNo[targetSerial] = daire;
-              
+
               readCount++;
-              _readingStatus = 'Okunuyor (Su): $targetSerial... ($readCount/$totalMeters)';
+              _readingStatus =
+                  'Okunuyor (Su): $targetSerial... ($readCount/$totalMeters)';
               _selectedMeterType = MeterType.water;
               notifyListeners();
-              
+
               bool success = await _readSingleSecondary(targetSerial);
               if (!success) {
-                _handleFailedRead(daire.toString(), targetSerial, MeterType.water, 
-                    i < heatTargets.length ? heatTargets[i] : '');
+                _handleFailedRead(
+                  daire.toString(),
+                  targetSerial,
+                  MeterType.water,
+                  i < heatTargets.length ? heatTargets[i] : '',
+                );
                 _playSound('error');
               } else {
                 _playSound('success');
@@ -414,8 +466,12 @@ class DeviceProvider extends AppDataProvider {
                 await Future.delayed(const Duration(milliseconds: 300));
               }
             } else if (i < waterTargets.length) {
-              _handleFailedRead(daire.toString(), '', MeterType.water, 
-                  i < heatTargets.length ? heatTargets[i] : '');
+              _handleFailedRead(
+                daire.toString(),
+                '',
+                MeterType.water,
+                i < heatTargets.length ? heatTargets[i] : '',
+              );
               _addLog('⚠️ Daire $daire: Su sayacı seri no boş, okuma atlandı.');
               saveSession();
             }
@@ -448,15 +504,14 @@ class DeviceProvider extends AppDataProvider {
       notifyListeners();
 
       try {
-
         final total = _primaryEnd - _primaryStart + 1;
         int currentCount = 1;
         for (int addr = _primaryStart; addr <= _primaryEnd; addr++) {
           _readingStatus = 'Okunuyor: Adres $addr... ($currentCount/$total)';
           notifyListeners();
-          
+
           await _readSinglePrimary(addr);
-          
+
           if (addr < _primaryEnd) {
             _addLog('⏳ Diğer sayaca geçiliyor (Sakinleşme: 300ms)...');
             await Future.delayed(const Duration(milliseconds: 300));
@@ -480,7 +535,6 @@ class DeviceProvider extends AppDataProvider {
     notifyListeners();
 
     try {
-
       final cmdStr = _toHexString(Uint8List.fromList(_selectedCommand.command));
       _addLog('📤 Gönderiliyor (${_selectedCommand.label}): $cmdStr');
       await _service.write(Uint8List.fromList(_selectedCommand.command));
@@ -505,68 +559,76 @@ class DeviceProvider extends AppDataProvider {
       return;
     }
 
-    final failedMeters = _meters.values.where((m) => m.overallStatus == MeterStatus.failed).toList();
+    final failedMeters = _meters.values
+        .where((m) => m.overallStatus == MeterStatus.failed)
+        .toList();
     if (failedMeters.isEmpty) {
       _addLog('⚠️ Okunamayan sayaç bulunamadı.');
       return;
     }
 
+    _isPaused = false;
+    _isStopped = false;
+    _isReading = true;
+    _rxBuffer.clear();
+    _activeIndex = -1;
+    _timeoutTimer?.cancel();
+    notifyListeners();
+
+    try {
+      int readCount = 0;
+      final totalMeters = failedMeters.length;
+
+      for (var failedMeter in failedMeters) {
+        if (_isStopped) break;
+
+        if (_isPaused) {
+          _readingStatus = 'Duraklatıldı...';
+          notifyListeners();
+          await _pauseCompleter?.future;
+          if (_isStopped) break;
+        }
+
+        readCount++;
+
+        if ((_selectedReadingMode == ReadingMode.heat ||
+                _selectedReadingMode == ReadingMode.both) &&
+            failedMeter.heatMeterId.isNotEmpty) {
+          _activeIndex = _meters.values.toList().indexOf(failedMeter);
+          _readingStatus =
+              'Tekrar Okunuyor (Isı): ${failedMeter.heatMeterId}... ($readCount/$totalMeters)';
+          _selectedMeterType = MeterType.heat;
+          notifyListeners();
+          await _readSingleSecondary(failedMeter.heatMeterId);
+        }
+
+        if ((_selectedReadingMode == ReadingMode.water ||
+                _selectedReadingMode == ReadingMode.both) &&
+            failedMeter.waterMeterId.isNotEmpty) {
+          _readingStatus =
+              'Tekrar Okunuyor (Su): ${failedMeter.waterMeterId}... ($readCount/$totalMeters)';
+          _selectedMeterType = MeterType.water;
+          notifyListeners();
+          await _readSingleSecondary(failedMeter.waterMeterId);
+        }
+
+        if (readCount < totalMeters) {
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
+      }
+    } catch (e) {
+      _addLog('❌ Tekrar okuma hatası: $e');
+    } finally {
+      if (!_isStopped) {
+        _playSound('complete');
+      }
+      _isReading = false;
       _isPaused = false;
       _isStopped = false;
-      _isReading = true;
-      _rxBuffer.clear();
-      _activeIndex = -1;
-      _timeoutTimer?.cancel();
+      _readingStatus = 'Tekrar Okuma Tamamlandı';
+      saveSession(immediate: true);
       notifyListeners();
-
-      try {
-        int readCount = 0;
-        final totalMeters = failedMeters.length;
-
-        for (var failedMeter in failedMeters) {
-          if (_isStopped) break;
-
-          if (_isPaused) {
-            _readingStatus = 'Duraklatıldı...';
-            notifyListeners();
-            await _pauseCompleter?.future;
-            if (_isStopped) break;
-          }
-
-          readCount++;
-          
-          if ((_selectedReadingMode == ReadingMode.heat || _selectedReadingMode == ReadingMode.both) && failedMeter.heatMeterId.isNotEmpty) {
-            _activeIndex = _meters.values.toList().indexOf(failedMeter);
-            _readingStatus = 'Tekrar Okunuyor (Isı): ${failedMeter.heatMeterId}... ($readCount/$totalMeters)';
-            _selectedMeterType = MeterType.heat;
-            notifyListeners();
-            await _readSingleSecondary(failedMeter.heatMeterId);
-          }
-
-          if ((_selectedReadingMode == ReadingMode.water || _selectedReadingMode == ReadingMode.both) && failedMeter.waterMeterId.isNotEmpty) {
-            _readingStatus = 'Tekrar Okunuyor (Su): ${failedMeter.waterMeterId}... ($readCount/$totalMeters)';
-            _selectedMeterType = MeterType.water;
-            notifyListeners();
-            await _readSingleSecondary(failedMeter.waterMeterId);
-          }
-
-          if (readCount < totalMeters) {
-            await Future.delayed(const Duration(milliseconds: 300));
-          }
-        }
-      } catch (e) {
-        _addLog('❌ Tekrar okuma hatası: $e');
-      } finally {
-        if (!_isStopped) {
-          _playSound('complete');
-        }
-        _isReading = false;
-        _isPaused = false;
-        _isStopped = false;
-        _readingStatus = 'Tekrar Okuma Tamamlandı';
-        saveSession(immediate: true);
-        notifyListeners();
-      }
+    }
   }
 
   Future<bool> importFromExcel() async {
@@ -623,34 +685,58 @@ class DeviceProvider extends AppDataProvider {
       await _service.write(Uint8List.fromList(resetCmd));
       await Future.delayed(const Duration(milliseconds: 600));
 
-      final baseFrame = [0x68, 0x0B, 0x0B, 0x68, 0x53, 0xFD, 0x52, b1, b2, b3, b4, 0xFF, 0xFF, 0xFF, 0xFF];
+      final baseFrame = [
+        0x68,
+        0x0B,
+        0x0B,
+        0x68,
+        0x53,
+        0xFD,
+        0x52,
+        b1,
+        b2,
+        b3,
+        b4,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+      ];
       int cs = 0;
       for (int i = 4; i < baseFrame.length; i++) {
         cs = (cs + baseFrame[i]) % 256;
       }
       final selectionFrame = [...baseFrame, cs, 0x16];
 
-      _addLog('📤 Seçim Çerçevesi ($targetSerial): ${_toHexString(Uint8List.fromList(selectionFrame))}');
+      _addLog(
+        '📤 Seçim Çerçevesi ($targetSerial): ${_toHexString(Uint8List.fromList(selectionFrame))}',
+      );
       await _service.write(Uint8List.fromList(selectionFrame));
 
       bool e5Received = false;
       _e5Completer = Completer<bool>();
       try {
-        e5Received = await _e5Completer!.future.timeout(const Duration(milliseconds: 500));
+        e5Received = await _e5Completer!.future.timeout(
+          const Duration(milliseconds: 500),
+        );
       } catch (e) {
         e5Received = false;
       }
 
       if (!e5Received) {
-        _addLog('⏳ E5 alınamadı, sayaç derin uykuda olabilir. 500ms bekleniyor...');
+        _addLog(
+          '⏳ E5 alınamadı, sayaç derin uykuda olabilir. 500ms bekleniyor...',
+        );
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         _addLog('📤 Seçim Çerçevesi İkinci Kez Gönderiliyor ($targetSerial)');
         await _service.write(Uint8List.fromList(selectionFrame));
-        
+
         _e5Completer = Completer<bool>();
         try {
-          e5Received = await _e5Completer!.future.timeout(const Duration(milliseconds: 500));
+          e5Received = await _e5Completer!.future.timeout(
+            const Duration(milliseconds: 500),
+          );
         } catch (e) {
           e5Received = false;
         }
@@ -659,22 +745,28 @@ class DeviceProvider extends AppDataProvider {
       if (e5Received) {
         _addLog('✅ E5 Alındı. 400ms beklenip okuma komutu gönderilecek.');
       } else {
-        _addLog('❌ İkinci denemede de E5 alınamadı! (Kör Okuma Aktif - Zorla 7B gönderiliyor...)');
+        _addLog(
+          '❌ İkinci denemede de E5 alınamadı! (Kör Okuma Aktif - Zorla 7B gönderiliyor...)',
+        );
       }
 
       await Future.delayed(const Duration(milliseconds: 400));
 
       final readCmd7B = [0x10, 0x7B, 0xFD, 0x78, 0x16];
-      _addLog('📤 Okuma Komutu (FD - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}');
+      _addLog(
+        '📤 Okuma Komutu (FD - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}',
+      );
       await _service.write(Uint8List.fromList(readCmd7B));
 
       _timeoutTimer = Timer(const Duration(seconds: 2), () async {
         if (!_readCompleter!.isCompleted) {
           _addLog('⏳ 7B Komutuna cevap yok, 5B ile tekrar deneniyor...');
           final readCmd5B = [0x10, 0x5B, 0xFD, 0x58, 0x16];
-          _addLog('📤 Okuma Komutu (FD - 5B): ${_toHexString(Uint8List.fromList(readCmd5B))}');
+          _addLog(
+            '📤 Okuma Komutu (FD - 5B): ${_toHexString(Uint8List.fromList(readCmd5B))}',
+          );
           await _service.write(Uint8List.fromList(readCmd5B));
-          
+
           _timeoutTimer = Timer(const Duration(seconds: 2), () {
             if (!_readCompleter!.isCompleted) {
               _addLog('❌ Zaman Aşımı: $targetSerial cevap vermedi (Retry)');
@@ -702,13 +794,17 @@ class DeviceProvider extends AppDataProvider {
     try {
       final resetCmd = [0x10, 0x40, addr, 0x00, 0x16];
       resetCmd[3] = (0x40 + addr) % 256;
-      _addLog('📤 Sıfırlama (Reset) Adres $addr: ${_toHexString(Uint8List.fromList(resetCmd))}');
+      _addLog(
+        '📤 Sıfırlama (Reset) Adres $addr: ${_toHexString(Uint8List.fromList(resetCmd))}',
+      );
       await _service.write(Uint8List.fromList(resetCmd));
       await Future.delayed(const Duration(milliseconds: 150));
 
       final readCmd7B = [0x10, 0x7B, addr, 0x00, 0x16];
       readCmd7B[3] = (0x7B + addr) % 256;
-      _addLog('📤 Okuma Komutu ($addr - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}');
+      _addLog(
+        '📤 Okuma Komutu ($addr - 7B): ${_toHexString(Uint8List.fromList(readCmd7B))}',
+      );
       await _service.write(Uint8List.fromList(readCmd7B));
 
       _timeoutTimer = Timer(const Duration(seconds: 2), () async {
@@ -716,9 +812,11 @@ class DeviceProvider extends AppDataProvider {
           _addLog('⏳ 7B Komutuna cevap yok, 5B ile tekrar deneniyor...');
           final readCmd5B = [0x10, 0x5B, addr, 0x00, 0x16];
           readCmd5B[3] = (0x5B + addr) % 256;
-          _addLog('📤 Okuma Komutu ($addr - 5B): ${_toHexString(Uint8List.fromList(readCmd5B))}');
+          _addLog(
+            '📤 Okuma Komutu ($addr - 5B): ${_toHexString(Uint8List.fromList(readCmd5B))}',
+          );
           await _service.write(Uint8List.fromList(readCmd5B));
-          
+
           _timeoutTimer = Timer(const Duration(seconds: 2), () {
             if (!_readCompleter!.isCompleted) {
               _addLog('❌ Zaman Aşımı: Adres $addr cevap vermedi (Retry)');
@@ -768,7 +866,9 @@ class DeviceProvider extends AppDataProvider {
     );
     saveSession();
     if (!kIsWeb) {
-      _firebaseService.updateMeterData(siteId, key, _meters[key]!).catchError((e){
+      _firebaseService.updateMeterData(siteId, key, _meters[key]!).catchError((
+        e,
+      ) {
         if (kDebugMode) debugPrint("Firebase sync error: $e");
       });
     }
@@ -810,9 +910,11 @@ class DeviceProvider extends AppDataProvider {
 
       final l1 = _rxBuffer[1];
       final l2 = _rxBuffer[2];
-      
+
       if (l1 != l2 || _rxBuffer[3] != 0x68) {
-        _addLog('⚠️ Hatalı Başlangıç Çerçevesi (l1 != l2 veya eksik 0x68). Kaydırılıyor...');
+        _addLog(
+          '⚠️ Hatalı Başlangıç Çerçevesi (l1 != l2 veya eksik 0x68). Kaydırılıyor...',
+        );
         _rxBuffer.removeAt(0);
         continue;
       }
@@ -821,23 +923,25 @@ class DeviceProvider extends AppDataProvider {
 
       if (_rxBuffer.length >= totalLength) {
         if (_rxBuffer[totalLength - 1] == 0x16) {
-          
           int cs = 0;
           for (int i = 4; i < totalLength - 2; i++) {
             cs = (cs + _rxBuffer[i]) % 256;
           }
 
           if (cs == _rxBuffer[totalLength - 2]) {
-             final frameBytes = Uint8List.fromList(_rxBuffer.sublist(0, totalLength));
+            final frameBytes = Uint8List.fromList(
+              _rxBuffer.sublist(0, totalLength),
+            );
             _addLog('📥 Tam Paket (CRC OK): ${_toHexString(frameBytes)}');
 
             try {
               final meterData = MBusParser.parseData(
                 frameBytes,
-                isWaterMeter: _selectedMeterType == MeterType.water
+                isWaterMeter: _selectedMeterType == MeterType.water,
               );
               if (meterData != null) {
-                final flatNo = _expectedDaireNo[meterData.meterId]?.toString() ?? '';
+                final flatNo =
+                    _expectedDaireNo[meterData.meterId]?.toString() ?? '';
 
                 if (_meters.containsKey(flatNo)) {
                   final existing = _meters[flatNo]!;
@@ -851,9 +955,11 @@ class DeviceProvider extends AppDataProvider {
                     existing.waterStatus = MeterStatus.success;
                   }
 
-                  if (existing.heatStatus == MeterStatus.success && existing.waterStatus == MeterStatus.success) {
+                  if (existing.heatStatus == MeterStatus.success &&
+                      existing.waterStatus == MeterStatus.success) {
                     existing.overallStatus = MeterStatus.success;
-                  } else if (existing.heatStatus == MeterStatus.failed || existing.waterStatus == MeterStatus.failed) {
+                  } else if (existing.heatStatus == MeterStatus.failed ||
+                      existing.waterStatus == MeterStatus.failed) {
                     existing.overallStatus = MeterStatus.failed;
                   }
 
@@ -861,12 +967,24 @@ class DeviceProvider extends AppDataProvider {
                 } else {
                   _meters[flatNo] = MeterData(
                     flatNo: flatNo,
-                    heatMeterId: _selectedMeterType == MeterType.heat ? meterData.meterId : '',
-                    heatIndex: _selectedMeterType == MeterType.heat ? _formatHeatIndex(meterData.energy) : '0.0',
-                    heatStatus: _selectedMeterType == MeterType.heat ? MeterStatus.success : MeterStatus.pending,
-                    waterMeterId: _selectedMeterType == MeterType.water ? meterData.meterId : '',
-                    waterIndex: _selectedMeterType == MeterType.water ? _formatWaterIndex(meterData.volume) : '0.0',
-                    waterStatus: _selectedMeterType == MeterType.water ? MeterStatus.success : MeterStatus.pending,
+                    heatMeterId: _selectedMeterType == MeterType.heat
+                        ? meterData.meterId
+                        : '',
+                    heatIndex: _selectedMeterType == MeterType.heat
+                        ? _formatHeatIndex(meterData.energy)
+                        : '0.0',
+                    heatStatus: _selectedMeterType == MeterType.heat
+                        ? MeterStatus.success
+                        : MeterStatus.pending,
+                    waterMeterId: _selectedMeterType == MeterType.water
+                        ? meterData.meterId
+                        : '',
+                    waterIndex: _selectedMeterType == MeterType.water
+                        ? _formatWaterIndex(meterData.volume)
+                        : '0.0',
+                    waterStatus: _selectedMeterType == MeterType.water
+                        ? MeterStatus.success
+                        : MeterStatus.pending,
                     overallStatus: MeterStatus.pending,
                     type: _selectedMeterType,
                     readTime: DateTime.now(),
@@ -874,9 +992,11 @@ class DeviceProvider extends AppDataProvider {
                 }
 
                 if (!kIsWeb) {
-                  _firebaseService.updateMeterData(siteId, flatNo, _meters[flatNo]!).catchError((e){
-                    if (kDebugMode) debugPrint("Firebase sync error: $e");
-                  });
+                  _firebaseService
+                      .updateMeterData(siteId, flatNo, _meters[flatNo]!)
+                      .catchError((e) {
+                        if (kDebugMode) debugPrint("Firebase sync error: $e");
+                      });
                 }
 
                 _addLog('🔍 Sayaç parse edildi → ID: ${meterData.meterId}');
@@ -890,12 +1010,16 @@ class DeviceProvider extends AppDataProvider {
               _addLog('❌ Parse hatası: $e');
             }
           } else {
-            _addLog('⚠️ CRC Hatalı (Beklenen: 0x${cs.toRadixString(16).padLeft(2, '0').toUpperCase()}, Gelen: 0x${_rxBuffer[totalLength - 2].toRadixString(16).padLeft(2, '0').toUpperCase()}). Kaydırılıyor...');
+            _addLog(
+              '⚠️ CRC Hatalı (Beklenen: 0x${cs.toRadixString(16).padLeft(2, '0').toUpperCase()}, Gelen: 0x${_rxBuffer[totalLength - 2].toRadixString(16).padLeft(2, '0').toUpperCase()}). Kaydırılıyor...',
+            );
             _rxBuffer.removeAt(0);
             continue;
           }
         } else {
-          _addLog('⚠️ Hatalı Çerçeve Bitişi: 0x${_rxBuffer[totalLength - 1].toRadixString(16).padLeft(2, '0').toUpperCase()}. Kaydırılıyor...');
+          _addLog(
+            '⚠️ Hatalı Çerçeve Bitişi: 0x${_rxBuffer[totalLength - 1].toRadixString(16).padLeft(2, '0').toUpperCase()}. Kaydırılıyor...',
+          );
           _rxBuffer.removeAt(0);
           continue;
         }
@@ -906,7 +1030,6 @@ class DeviceProvider extends AppDataProvider {
           _timeoutTimer?.cancel();
           _isReading = false;
         }
-
       } else {
         break;
       }
@@ -920,12 +1043,12 @@ class DeviceProvider extends AppDataProvider {
 
   String _formatHeatIndex(double val) {
     if (val == 0) return "0";
-    
+
     double energy = val;
     if (val > 100000) {
       energy = val / 1000;
     }
-    
+
     if (energy == energy.toInt()) {
       return energy.toInt().toString();
     }
@@ -957,6 +1080,10 @@ class DeviceProvider extends AppDataProvider {
       await _performSave();
     });
   }
+
+  SharedPreferences? _prefs;
+  Future<SharedPreferences> get _getPrefs async =>
+      _prefs ??= await SharedPreferences.getInstance();
 
   Future<void> _performSave() async {
     try {
@@ -1009,9 +1136,11 @@ class DeviceProvider extends AppDataProvider {
       _daireIds = sessionData['daireIds'] ?? '';
       _heatSecondaryIds = sessionData['heatSecondaryIds'] ?? '';
       _waterSecondaryIds = sessionData['waterSecondaryIds'] ?? '';
-      
+
       if (sessionData['readingMode'] != null) {
-        _selectedReadingMode = ReadingMode.values.byName(sessionData['readingMode']);
+        _selectedReadingMode = ReadingMode.values.byName(
+          sessionData['readingMode'],
+        );
       }
 
       if (sessionData['meters'] != null) {
@@ -1039,16 +1168,25 @@ class DeviceProvider extends AppDataProvider {
     }
   }
 
-  void _handleFailedRead(String flatNo, String currentSerial, MeterType type, String otherSerial) {
+  void _handleFailedRead(
+    String flatNo,
+    String currentSerial,
+    MeterType type,
+    String otherSerial,
+  ) {
     if (!_meters.containsKey(flatNo)) {
       _meters[flatNo] = MeterData(
         flatNo: flatNo,
         heatMeterId: type == MeterType.heat ? currentSerial : otherSerial,
         heatIndex: '0.0',
-        heatStatus: type == MeterType.heat ? MeterStatus.failed : MeterStatus.pending,
+        heatStatus: type == MeterType.heat
+            ? MeterStatus.failed
+            : MeterStatus.pending,
         waterMeterId: type == MeterType.water ? currentSerial : otherSerial,
         waterIndex: '0.0',
-        waterStatus: type == MeterType.water ? MeterStatus.failed : MeterStatus.pending,
+        waterStatus: type == MeterType.water
+            ? MeterStatus.failed
+            : MeterStatus.pending,
         overallStatus: MeterStatus.failed,
         type: type,
         readTime: DateTime.now(),
@@ -1067,15 +1205,19 @@ class DeviceProvider extends AppDataProvider {
     }
 
     if (!kIsWeb) {
-      _firebaseService.updateMeterData(siteId, flatNo, _meters[flatNo]!).catchError((e){
-        if (kDebugMode) debugPrint("Firebase sync error: $e");
-      });
+      _firebaseService
+          .updateMeterData(siteId, flatNo, _meters[flatNo]!)
+          .catchError((e) {
+            if (kDebugMode) debugPrint("Firebase sync error: $e");
+          });
     }
     notifyListeners();
   }
 
   String _toHexString(Uint8List bytes) {
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+    return bytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+        .join(' ');
   }
 
   void _addLog(String line) {
@@ -1093,7 +1235,6 @@ class DeviceProvider extends AppDataProvider {
     notifyListeners();
   }
 
-  @override
   void dispose() {
     _audioPlayer.dispose();
     _timeoutTimer?.cancel();
