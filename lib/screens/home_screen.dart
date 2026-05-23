@@ -1256,32 +1256,44 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, length, _) {
         return SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
-            return Selector<AppDataProvider, (MeterData, ReadingMode)>(
+            return Selector<AppDataProvider, (String, String, String, bool, String, ReadingMode)>(
               key: ValueKey('selector_$index'),
-              selector: (_, provider) =>
-                  (provider.meterList[index], provider.selectedReadingMode),
-              builder: (context, data, _) {
-                final meter = data.$1;
-                final mode = data.$2;
-
+              selector: (_, provider) {
+                final meter = provider.meterList[index];
+                final mode = provider.selectedReadingMode;
                 bool isSuccess = false;
                 if (mode == ReadingMode.heat) {
                   isSuccess = meter.heatStatus == MeterStatus.success;
                 } else if (mode == ReadingMode.water) {
                   isSuccess = meter.waterStatus == MeterStatus.success;
                 } else if (mode == ReadingMode.both) {
-                  isSuccess =
-                      meter.heatStatus == MeterStatus.success &&
+                  isSuccess = meter.heatStatus == MeterStatus.success &&
                       meter.waterStatus == MeterStatus.success;
                 }
+                return (
+                  meter.flatNo,
+                  meter.getHeatIndexDisplay(),
+                  meter.getWaterIndexDisplay(),
+                  isSuccess,
+                  meter.adSoyad ?? '',
+                  mode
+                );
+              },
+              builder: (context, data, _) {
+                final flatNo = data.$1;
+                final heatDisplay = data.$2;
+                final waterDisplay = data.$3;
+                final isSuccess = data.$4;
+                final adSoyad = data.$5;
+
 
                 return MeterCard(
-                  key: ValueKey('meter_${meter.flatNo}'),
-                  daireNo: meter.flatNo,
-                  isiEndeks: meter.getHeatIndexDisplay(),
-                  suEndeks: meter.getWaterIndexDisplay(),
+                  key: ValueKey('meter_$flatNo'),
+                  daireNo: flatNo,
+                  isiEndeks: heatDisplay,
+                  suEndeks: waterDisplay,
                   isSuccess: isSuccess,
-                  adSoyad: meter.adSoyad,
+                  adSoyad: adSoyad.isEmpty ? null : adSoyad,
                 );
               },
             );
@@ -1965,9 +1977,21 @@ String _generateCSVString((List<MeterData>, ReadingMode) data) {
 
   for (var i = 0; i < meters.length; i++) {
     final m = meters[i];
-    final dateStr = m.readTime != null
-        ? '${m.readTime!.day.toString().padLeft(2, '0')}.${m.readTime!.month.toString().padLeft(2, '0')}.${m.readTime!.year} ${m.readTime!.hour.toString().padLeft(2, '0')}:${m.readTime!.minute.toString().padLeft(2, '0')}'
-        : '-';
+    String dateStr = '-';
+    if (m.readTime != null) {
+      final t = m.readTime!;
+      final sb = StringBuffer();
+      sb.write(t.day.toString().padLeft(2, '0'));
+      sb.write('.');
+      sb.write(t.month.toString().padLeft(2, '0'));
+      sb.write('.');
+      sb.write(t.year);
+      sb.write(' ');
+      sb.write(t.hour.toString().padLeft(2, '0'));
+      sb.write(':');
+      sb.write(t.minute.toString().padLeft(2, '0'));
+      dateStr = sb.toString();
+    }
     final statusStr = m.getStatusText();
 
     final rowData = <String>[];
@@ -2044,9 +2068,21 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
 
   for (var i = 0; i < meters.length; i++) {
     final m = meters[i];
-    final dateStr = m.readTime != null
-        ? '${m.readTime!.day.toString().padLeft(2, '0')}.${m.readTime!.month.toString().padLeft(2, '0')}.${m.readTime!.year} ${m.readTime!.hour.toString().padLeft(2, '0')}:${m.readTime!.minute.toString().padLeft(2, '0')}'
-        : '-';
+    String dateStr = '-';
+    if (m.readTime != null) {
+      final t = m.readTime!;
+      final sb = StringBuffer();
+      sb.write(t.day.toString().padLeft(2, '0'));
+      sb.write('.');
+      sb.write(t.month.toString().padLeft(2, '0'));
+      sb.write('.');
+      sb.write(t.year);
+      sb.write(' ');
+      sb.write(t.hour.toString().padLeft(2, '0'));
+      sb.write(':');
+      sb.write(t.minute.toString().padLeft(2, '0'));
+      dateStr = sb.toString();
+    }
     final statusStr = m.getStatusText();
 
     final rowData = <excel_pkg.CellValue>[];
