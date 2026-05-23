@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 
@@ -155,7 +156,23 @@ class MBusParser {
     return val.toDouble();
   }
 
+  static const List<double> _pow10Lookup = [
+    1.0,
+    10.0,
+    100.0,
+    1000.0,
+    10000.0,
+    100000.0,
+    1000000.0,
+    10000000.0,
+    100000000.0,
+    1000000000.0,
+  ];
+
   static double _pow10(int exponent) {
+    if (exponent >= 0 && exponent < _pow10Lookup.length) {
+      return _pow10Lookup[exponent];
+    }
     return math.pow(10.0, exponent).toDouble();
   }
 }
