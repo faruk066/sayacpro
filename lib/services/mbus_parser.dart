@@ -1,4 +1,3 @@
-
 class MBusRawData {
   final String meterId;
   final double energy;
@@ -15,7 +14,7 @@ class MBusParser {
   /// Hex verisini ayrıştırıp MBusRawData döner
   static MBusRawData? parseData(List<int> bytes, {bool isWaterMeter = false}) {
     if (bytes.isEmpty) return null;
-    
+
     if (bytes[0] != 0x68) return null;
     if (bytes.length < 19) return null;
 
@@ -34,7 +33,10 @@ class MBusParser {
       i++;
 
       while (i < bytes.length && (bytes[i - 1] & 0x80) != 0) {
-        if ((bytes[i] & 0x80) == 0) { i++; break; }
+        if ((bytes[i] & 0x80) == 0) {
+          i++;
+          break;
+        }
         i++;
       }
       if (i >= bytes.length) break;
@@ -43,7 +45,10 @@ class MBusParser {
       i++;
 
       while (i < bytes.length && (bytes[i - 1] & 0x80) != 0) {
-        if ((bytes[i] & 0x80) == 0) { i++; break; }
+        if ((bytes[i] & 0x80) == 0) {
+          i++;
+          break;
+        }
         i++;
       }
       if (i >= bytes.length) break;
@@ -76,21 +81,17 @@ class MBusParser {
       }
     }
 
-    return MBusRawData(
-      meterId: meterId,
-      energy: energy,
-      volume: volume,
-    );
+    return MBusRawData(meterId: meterId, energy: energy, volume: volume);
   }
 
   static String _decodeBcd(List<int> bytes) {
-    String res = '';
+    final buffer = StringBuffer();
     for (int i = bytes.length - 1; i >= 0; i--) {
       final b = bytes[i];
-      res += ((b >> 4) & 0x0F).toRadixString(16);
-      res += (b & 0x0F).toRadixString(16);
+      buffer.write(((b >> 4) & 0x0F).toRadixString(16));
+      buffer.write((b & 0x0F).toRadixString(16));
     }
-    return res;
+    return buffer.toString();
   }
 
   static double _decodeBcdInt(List<int> bytes) {
@@ -110,18 +111,30 @@ class MBusParser {
 
   static int _dataLength(int dataType) {
     switch (dataType) {
-      case 0x00: return 0;
-      case 0x01: return 1;
-      case 0x02: return 2;
-      case 0x03: return 3;
-      case 0x04: return 4;
-      case 0x05: return 4;
-      case 0x06: return 6;
-      case 0x07: return 8;
-      case 0x0C: return 4;
-      case 0x0D: return -1;
-      case 0x0E: return 6;
-      default: return -1;
+      case 0x00:
+        return 0;
+      case 0x01:
+        return 1;
+      case 0x02:
+        return 2;
+      case 0x03:
+        return 3;
+      case 0x04:
+        return 4;
+      case 0x05:
+        return 4;
+      case 0x06:
+        return 6;
+      case 0x07:
+        return 8;
+      case 0x0C:
+        return 4;
+      case 0x0D:
+        return -1;
+      case 0x0E:
+        return 6;
+      default:
+        return -1;
     }
   }
 
