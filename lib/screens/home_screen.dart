@@ -276,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mini: true,
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              tooltip: 'Otomatik Kaydırmayı Devam Ettir',
               child: const Icon(Icons.arrow_downward),
               onPressed: () {
                 setState(() {
