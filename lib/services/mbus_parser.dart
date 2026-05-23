@@ -87,13 +87,13 @@ class MBusParser {
   }
 
   static String _decodeBcd(List<int> bytes) {
-    String res = '';
+    final buffer = StringBuffer();
     for (int i = bytes.length - 1; i >= 0; i--) {
       final b = bytes[i];
-      res += ((b >> 4) & 0x0F).toRadixString(16);
-      res += (b & 0x0F).toRadixString(16);
+      buffer.write(((b >> 4) & 0x0F).toRadixString(16));
+      buffer.write((b & 0x0F).toRadixString(16));
     }
-    return res;
+    return buffer.toString();
   }
 
   static double _decodeBcdInt(List<int> bytes) {
