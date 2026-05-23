@@ -570,10 +570,10 @@ class DeviceProvider extends AppDataProvider {
 
   Future<bool> importFromExcel() async {
     try {
-      final Uint8List? bytes = await ExcelService.pickAndReadExcel();
+      final ExcelPickResult? result = await ExcelService.pickAndReadExcel();
 
-      if (bytes != null) {
-        final parsedMeters = await compute(ExcelService.parseExcel, bytes);
+      if (result != null) {
+        final parsedMeters = await compute(ExcelService.parseExcel, result.bytes);
 
         _daireIds = parsedMeters.map((m) => m.flatNo).join("\n");
         _heatSecondaryIds = parsedMeters.map((m) => m.heatMeterId).join("\n");
@@ -584,8 +584,11 @@ class DeviceProvider extends AppDataProvider {
           _meters[meter.flatNo] = meter;
         }
 
+        _siteName = result.fileName;
+
         _addLog("✅ Excel'den ${parsedMeters.length} daire içe aktarıldı.");
         saveSession(immediate: true);
+        _updateFirebaseSiteData();
         notifyListeners();
         return true;
       }

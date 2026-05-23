@@ -7,8 +7,15 @@ import 'excel_io_stub.dart'
     if (dart.library.io) 'excel_io_mobile.dart'
     if (dart.library.html) 'excel_io_web.dart';
 
+class ExcelPickResult {
+  final Uint8List bytes;
+  final String fileName;
+
+  ExcelPickResult(this.bytes, this.fileName);
+}
+
 class ExcelService {
-  static Future<Uint8List?> pickAndReadExcel() async {
+  static Future<ExcelPickResult?> pickAndReadExcel() async {
     try {
       fp.FilePickerResult? result = await fp.FilePicker.platform.pickFiles(
         type: fp.FileType.custom,
@@ -16,11 +23,25 @@ class ExcelService {
         withData: true,
       );
 
-      if (result != null) {
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        Uint8List? bytes;
+
         if (kIsWeb) {
-          return result.files.single.bytes;
+          bytes = file.bytes;
         } else {
-          return result.files.single.bytes ?? await readPlatformFileAsBytes(result.files.single.path);
+          bytes = file.bytes ?? await readPlatformFileAsBytes(file.path);
+        }
+
+        if (bytes != null) {
+          String name = file.name;
+          // Strip extension
+          if (name.toLowerCase().endsWith('.xlsx')) {
+            name = name.substring(0, name.length - 5);
+          } else if (name.toLowerCase().endsWith('.xls')) {
+            name = name.substring(0, name.length - 4);
+          }
+          return ExcelPickResult(bytes, name);
         }
       }
     } catch (e) {

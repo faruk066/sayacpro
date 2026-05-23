@@ -1342,26 +1342,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.table_view, color: AppTheme.success),
-                title: const Text('Excel Raporu (.xlsx)'),
-                subtitle: const Text('Önerilen (Formatlı tablo)'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _exportToExcel(actualProvider);
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.description,
-                  color: Colors.blueAccent,
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(Icons.table_view, color: AppTheme.success),
+                  title: const Text('Excel Raporu (.xlsx)'),
+                  subtitle: const Text('Önerilen (Formatlı tablo)'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportToExcel(actualProvider);
+                  },
                 ),
-                title: const Text('CSV Raporu (.csv)'),
-                subtitle: const Text('Düz metin formatında'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _exportToCSV(actualProvider);
-                },
+              ),
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.description,
+                    color: Colors.blueAccent,
+                  ),
+                  title: const Text('CSV Raporu (.csv)'),
+                  subtitle: const Text('Düz metin formatında'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _exportToCSV(actualProvider);
+                  },
+                ),
               ),
               const SizedBox(height: 16),
             ],
