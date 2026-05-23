@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 
 class MBusRawData {
   final String meterId;
@@ -91,6 +93,11 @@ class MBusParser {
       res += (b & 0x0F).toRadixString(16);
     }
     return res;
+  }
+
+  @visibleForTesting
+  static double decodeBcdIntForTesting(List<int> bytes) {
+    return _decodeBcdInt(bytes);
   }
 
   static double _decodeBcdInt(List<int> bytes) {
