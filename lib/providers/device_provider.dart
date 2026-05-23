@@ -1224,7 +1224,6 @@ class DeviceProvider extends AppDataProvider {
     notifyListeners();
   }
 
-  @override
   void dispose() {
     _audioPlayer.dispose();
     _timeoutTimer?.cancel();
