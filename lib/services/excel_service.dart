@@ -12,7 +12,7 @@ class ExcelService {
     try {
       fp.FilePickerResult? result = await fp.FilePicker.platform.pickFiles(
         type: fp.FileType.custom,
-        allowedExtensions: ['xlsx'],
+        allowedExtensions: ['xls', 'xlsx'],
         withData: true,
       );
 
