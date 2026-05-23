@@ -1080,6 +1080,10 @@ class DeviceProvider extends AppDataProvider {
     });
   }
 
+  SharedPreferences? _prefs;
+  Future<SharedPreferences> get _getPrefs async =>
+      _prefs ??= await SharedPreferences.getInstance();
+
   Future<void> _performSave() async {
     try {
       const secureStorage = FlutterSecureStorage();
@@ -1244,7 +1248,6 @@ class DeviceProvider extends AppDataProvider {
     notifyListeners();
   }
 
-  @override
   void dispose() {
     _audioPlayer.dispose();
     _timeoutTimer?.cancel();

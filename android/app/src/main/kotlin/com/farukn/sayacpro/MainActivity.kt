@@ -1,4 +1,4 @@
-package com.example.sayac_pro
+package com.farukn.sayacpro
 
 import io.flutter.embedding.android.FlutterActivity
 
