@@ -1,0 +1,6 @@
+Title: 🔒 Fix unencrypted storage of sensitive session data
+
+Description:
+🎯 **What:** Migrated session data storage in `DeviceProvider` from plain text `SharedPreferences` to `FlutterSecureStorage`.
+⚠️ **Risk:** Sensitive user data, including reading modes and raw meter information, was being saved in plain text in `sayac_pro_session` via `SharedPreferences`. This could allow an attacker with physical access to the device or malicious apps with adequate permissions to read this data, compromising user privacy and potentially leading to tampering.
+🛡️ **Solution:** Replaced `SharedPreferences` usage with `FlutterSecureStorage` which encrypts the data at rest using Keychain on iOS and EncryptedSharedPreferences on Android. Also implemented a migration path in `loadSession()` so that existing plaintext session data is securely moved over to `FlutterSecureStorage` and then removed from `SharedPreferences`, avoiding data loss while ensuring security for users upgrading the app.

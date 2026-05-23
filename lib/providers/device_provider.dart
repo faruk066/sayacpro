@@ -6,6 +6,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase_service.dart';
 import '../models/site_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../services/mbus/connection_status.dart';
 import '../services/mbus/mbus_interface.dart';
 import '../services/mbus/mbus_stub.dart';
@@ -1084,7 +1086,7 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> _performSave() async {
     try {
-      final prefs = await _getPrefs;
+      const secureStorage = FlutterSecureStorage();
 
       final List<Map<String, dynamic>> metersJson = _meters.values
           .map((m) => m.toJson())
@@ -1100,7 +1102,7 @@ class DeviceProvider extends AppDataProvider {
       };
 
       final String encodedData = await compute(_serializeSession, sessionData);
-      await prefs.setString('sayac_pro_session', encodedData);
+      await secureStorage.write(key: 'sayac_pro_session', value: encodedData);
 
       if (kDebugMode) {
         debugPrint('💾 Oturum kaydedildi.');
@@ -1114,8 +1116,27 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> loadSession() async {
     try {
-      final prefs = await _getPrefs;
-      final String? sessionJson = prefs.getString('sayac_pro_session');
+      const secureStorage = FlutterSecureStorage();
+      String? sessionJson = await secureStorage.read(key: 'sayac_pro_session');
+
+      // Fallback and migration for unencrypted SharedPreferences data
+      if (sessionJson == null) {
+        final prefs = await SharedPreferences.getInstance();
+        sessionJson = prefs.getString('sayac_pro_session');
+        if (sessionJson != null) {
+          // Migrate to secure storage
+          await secureStorage.write(
+            key: 'sayac_pro_session',
+            value: sessionJson,
+          );
+          // Remove plain text data
+          await prefs.remove('sayac_pro_session');
+
+          if (kDebugMode) {
+            debugPrint('🔒 Oturum verileri güvenli depolamaya taşındı.');
+          }
+        }
+      }
 
       if (sessionJson == null) return;
 
@@ -1149,7 +1170,10 @@ class DeviceProvider extends AppDataProvider {
 
   Future<void> clearSessionData() async {
     try {
-      final prefs = await _getPrefs;
+      const secureStorage = FlutterSecureStorage();
+      await secureStorage.delete(key: 'sayac_pro_session');
+
+      final prefs = await SharedPreferences.getInstance();
       await prefs.remove('sayac_pro_session');
       _addLog('🗑️ Oturum verileri temizlendi.');
     } catch (e) {
