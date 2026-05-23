@@ -33,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _heatController = TextEditingController();
   final TextEditingController _waterController = TextEditingController();
 
-  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,8 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _waterController.dispose();
     super.dispose();
   }
-
-  @override
+  // ignore: annotate_overrides
   Widget build(BuildContext context) {
     if (kIsWeb) {
       final cloudProvider = context.read<CloudProvider>();
