@@ -20,7 +20,6 @@ import '../services/excel_service.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
@@ -61,16 +60,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!_isAutoScrollPaused) {
         _scrollToIndex(provider.activeIndex);
       }
-      
+
       if (_inputListScrollController.hasClients && !_isInputScrolling) {
         _isInputScrolling = true;
-        _inputListScrollController.animateTo(
-          provider.activeIndex * 48.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        ).then((_) {
-          _isInputScrolling = false;
-        });
+        _inputListScrollController
+            .animateTo(
+              provider.activeIndex * 48.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            )
+            .then((_) {
+              _isInputScrolling = false;
+            });
       }
     }
   }
@@ -143,80 +144,86 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                if (!kIsWeb)
-                  const SliverToBoxAdapter(
-                    child: SectionHeader(
-                      icon: Icons.settings_input_hdmi,
-                      title: 'BAĞLANTI & AYARLAR',
+                  if (!kIsWeb)
+                    const SliverToBoxAdapter(
+                      child: SectionHeader(
+                        icon: Icons.settings_input_hdmi,
+                        title: 'BAĞLANTI & AYARLAR',
+                      ),
                     ),
-                  ),
-                if (!kIsWeb)
-                  SliverToBoxAdapter(child: ConnectionCard(provider: context.read<DeviceProvider>())),
+                  if (!kIsWeb)
+                    SliverToBoxAdapter(
+                      child: ConnectionCard(
+                        provider: context.read<DeviceProvider>(),
+                      ),
+                    ),
 
-                if (kIsWeb)
-                  SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        const SectionHeader(
-                          icon: Icons.edit_note,
-                          title: 'VERİ GİRİŞİ & İŞLEM',
-                          iconColor: AppTheme.purple,
-                        ),
-                        _buildInputSection(),
-                      ],
-                    ),
-                  )
-                else
-                  Selector<DeviceProvider, String>(
-                    selector: (_, p) => p.selectedCommand.label,
-                    builder: (context, label, _) {
-                      if (label == 'İkincil Adres (Seri No ile)') {
-                        return SliverToBoxAdapter(
-                          child: Column(
-                            children: [
-                              const SectionHeader(
-                                icon: Icons.edit_note,
-                                title: 'VERİ GİRİŞİ & İŞLEM',
-                                iconColor: AppTheme.purple,
-                              ),
-                              _buildInputSection(),
-                            ],
+                  if (kIsWeb)
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          const SectionHeader(
+                            icon: Icons.edit_note,
+                            title: 'VERİ GİRİŞİ & İŞLEM',
+                            iconColor: AppTheme.purple,
                           ),
+                          _buildInputSection(),
+                        ],
+                      ),
+                    )
+                  else
+                    Selector<DeviceProvider, String>(
+                      selector: (_, p) => p.selectedCommand.label,
+                      builder: (context, label, _) {
+                        if (label == 'İkincil Adres (Seri No ile)') {
+                          return SliverToBoxAdapter(
+                            child: Column(
+                              children: [
+                                const SectionHeader(
+                                  icon: Icons.edit_note,
+                                  title: 'VERİ GİRİŞİ & İŞLEM',
+                                  iconColor: AppTheme.purple,
+                                ),
+                                _buildInputSection(),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SliverToBoxAdapter(
+                          child: SizedBox.shrink(),
+                        );
+                      },
+                    ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  if (!kIsWeb) SliverToBoxAdapter(child: _buildReadButton()),
+
+                  Selector<AppDataProvider, bool>(
+                    selector: (_, p) => p.meterList.isNotEmpty,
+                    builder: (context, hasMeters, _) {
+                      if (hasMeters) {
+                        return SliverMainAxisGroup(
+                          slivers: [
+                            const SliverToBoxAdapter(
+                              child: SectionHeader(
+                                icon: Icons.analytics,
+                                title: 'SONUÇLAR',
+                                iconColor: AppTheme.success,
+                              ),
+                            ),
+                            SliverToBoxAdapter(child: _buildResultHeader()),
+                            _buildMetersSliverList(),
+                            _buildRetryButtonSliver(),
+                          ],
                         );
                       }
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                      return SliverToBoxAdapter(child: _buildEmptyState());
                     },
                   ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                if (!kIsWeb) SliverToBoxAdapter(child: _buildReadButton()),
-
-                Selector<AppDataProvider, bool>(
-                  selector: (_, p) => p.meterList.isNotEmpty,
-                  builder: (context, hasMeters, _) {
-                    if (hasMeters) {
-                      return SliverMainAxisGroup(
-                        slivers: [
-                          const SliverToBoxAdapter(
-                            child: SectionHeader(
-                              icon: Icons.analytics,
-                              title: 'SONUÇLAR',
-                              iconColor: AppTheme.success,
-                            ),
-                          ),
-                          SliverToBoxAdapter(child: _buildResultHeader()),
-                          _buildMetersSliverList(),
-                          _buildRetryButtonSliver(),
-                        ],
-                      );
-                    }
-                    return SliverToBoxAdapter(child: _buildEmptyState());
-                  },
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
-            ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                ],
+              ),
             ),
           ),
         ),
@@ -225,7 +232,9 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: kIsWeb ? _buildWebFAB() : _buildMobileFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
-      bottomNavigationBar: kIsWeb ? const SizedBox.shrink() : _buildMobileBottomNav(),
+      bottomNavigationBar: kIsWeb
+          ? const SizedBox.shrink()
+          : _buildMobileBottomNav(),
     );
   }
 
@@ -241,7 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               FloatingActionButton.extended(
                 heroTag: 'export_btn',
-                onPressed: () => _showExportOptionsDialog(context, context.read<CloudProvider>(), isWeb: true),
+                onPressed: () => _showExportOptionsDialog(
+                  context,
+                  context.read<CloudProvider>(),
+                  isWeb: true,
+                ),
                 icon: const Icon(Icons.table_chart),
                 label: const Text('Sonuçları Paylaş'),
                 backgroundColor: AppTheme.success,
@@ -256,179 +269,180 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMobileFAB() {
     return Selector<DeviceProvider, bool>(
-        selector: (_, p) => p.isReading,
-        builder: (context, isReading, _) {
-          if (isReading) {
-            if (_isAutoScrollPaused) {
-              return FloatingActionButton(
-                heroTag: 'resume_scroll_btn',
-                mini: true,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                child: const Icon(Icons.arrow_downward),
-                onPressed: () {
-                  setState(() {
-                    _isAutoScrollPaused = false;
-                  });
-                  final provider = context.read<DeviceProvider>();
-                  if (provider.activeIndex != -1) {
-                    _scrollToIndex(provider.activeIndex);
-                  }
-                },
-              );
-            }
-            return const SizedBox.shrink();
+      selector: (_, p) => p.isReading,
+      builder: (context, isReading, _) {
+        if (isReading) {
+          if (_isAutoScrollPaused) {
+            return FloatingActionButton(
+              heroTag: 'resume_scroll_btn',
+              mini: true,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              child: const Icon(Icons.arrow_downward),
+              onPressed: () {
+                setState(() {
+                  _isAutoScrollPaused = false;
+                });
+                final provider = context.read<DeviceProvider>();
+                if (provider.activeIndex != -1) {
+                  _scrollToIndex(provider.activeIndex);
+                }
+              },
+            );
           }
+          return const SizedBox.shrink();
+        }
 
-          return Selector<DeviceProvider, bool>(
-            selector: (_, p) => p.meterList.isNotEmpty,
-            builder: (context, hasMeters, _) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+        return Selector<DeviceProvider, bool>(
+          selector: (_, p) => p.meterList.isNotEmpty,
+          builder: (context, hasMeters, _) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FloatingActionButton.extended(
+                    heroTag: 'add_manual_btn',
+                    onPressed: () => _showAddManualMeterDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Yeni Sayaç Ekle'),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  if (hasMeters) ...[
+                    const SizedBox(width: 16),
                     FloatingActionButton.extended(
-                      heroTag: 'add_manual_btn',
-                      onPressed: () => _showAddManualMeterDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Yeni Sayaç Ekle'),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    if (hasMeters) ...[
-                      const SizedBox(width: 16),
-                      FloatingActionButton.extended(
-                        heroTag: 'export_btn',
-                        onPressed: () => _showExportOptionsDialog(context, context.read<DeviceProvider>(), isWeb: false),
-                        icon: const Icon(Icons.table_chart),
-                        label: const Text('Sonuçları Paylaş'),
-                        backgroundColor: AppTheme.success,
-                        foregroundColor: Colors.white,
+                      heroTag: 'export_btn',
+                      onPressed: () => _showExportOptionsDialog(
+                        context,
+                        context.read<DeviceProvider>(),
+                        isWeb: false,
                       ),
-                    ],
+                      icon: const Icon(Icons.table_chart),
+                      label: const Text('Sonuçları Paylaş'),
+                      backgroundColor: AppTheme.success,
+                      foregroundColor: Colors.white,
+                    ),
                   ],
-                ),
-              );
-            },
-          );
-        },
-      );
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildMobileBottomNav() {
     return Selector<DeviceProvider, (bool, bool, String)>(
-        selector: (_, p) => (p.isReading, p.isPaused, p.readingStatus),
-        builder: (context, data, _) {
-          final isReading = data.$1;
-          final isPaused = data.$2;
-          final readingStatus = data.$3;
+      selector: (_, p) => (p.isReading, p.isPaused, p.readingStatus),
+      builder: (context, data, _) {
+        final isReading = data.$1;
+        final isPaused = data.$2;
+        final readingStatus = data.$3;
 
-          if (!isReading) return const SizedBox.shrink();
+        if (!isReading) return const SizedBox.shrink();
 
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
 
-          return SafeArea(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.brightness == Brightness.dark
-                    ? const Color(0xFF0F172A).withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
-                border: Border(
-                  top: BorderSide(
-                    color: colorScheme.outlineVariant,
-                    width: 1,
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.brightness == Brightness.dark
+                  ? const Color(0xFF0F172A).withValues(alpha: 0.95)
+                  : Colors.white.withValues(alpha: 0.95),
+              border: Border(
+                top: BorderSide(color: colorScheme.outlineVariant, width: 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  readingStatus.isNotEmpty ? readingStatus : 'Okunuyor...',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    readingStatus.isNotEmpty ? readingStatus : 'Okunuyor...',
-                    style: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final provider = context.read<DeviceProvider>();
+                          if (isPaused) {
+                            provider.resumeReading();
+                          } else {
+                            provider.pauseReading();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isPaused
+                              ? AppTheme.success
+                              : AppTheme.warning,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: Icon(
+                          isPaused ? Icons.play_arrow : Icons.pause,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          isPaused ? 'Devam Et' : 'Duraklat',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            final provider = context.read<DeviceProvider>();
-                            if (isPaused) {
-                              provider.resumeReading();
-                            } else {
-                              provider.pauseReading();
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isPaused
-                                ? AppTheme.success
-                                : AppTheme.warning,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          context.read<DeviceProvider>().stopReading();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          icon: Icon(
-                            isPaused ? Icons.play_arrow : Icons.pause,
-                            color: Colors.white,
-                          ),
-                          label: Text(
-                            isPaused ? 'Devam Et' : 'Duraklat',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        icon: const Icon(Icons.stop, color: Colors.white),
+                        label: const Text(
+                          'Durdur',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            context.read<DeviceProvider>().stopReading();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.error,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          icon: const Icon(Icons.stop, color: Colors.white),
-                          label: const Text(
-                            'Durdur',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        },
-      );
+          ),
+        );
+      },
+    );
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -457,10 +471,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           if (!kIsWeb) const SizedBox(width: 12),
           const Text('SayacPro'),
-          if (kIsWeb) const Padding(
-            padding: EdgeInsets.only(left: 8.0),
-            child: Text(' Dashboard', style: TextStyle(fontWeight: FontWeight.w300)),
-          ),
+          if (kIsWeb)
+            const Padding(
+              padding: EdgeInsets.only(left: 8.0),
+              child: Text(
+                ' Dashboard',
+                style: TextStyle(fontWeight: FontWeight.w300),
+              ),
+            ),
         ],
       ),
       actions: [
@@ -479,60 +497,69 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         if (!kIsWeb)
-        Selector<DeviceProvider, bool>(
-          selector: (_, p) => p.isSoundEnabled,
-          builder: (context, isEnabled, _) {
-            final colorScheme = Theme.of(context).colorScheme;
-            return IconButton(
-              icon: Icon(
-                isEnabled ? Icons.volume_up : Icons.volume_off,
-                color: isEnabled
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurface.withValues(alpha: 0.38),
-                size: 22,
-              ),
-              tooltip: isEnabled ? 'Sesi Kapat' : 'Sesi Aç',
-              onPressed: () => context.read<DeviceProvider>().toggleSound(),
-            );
-          },
-        ),
+          Selector<DeviceProvider, bool>(
+            selector: (_, p) => p.isSoundEnabled,
+            builder: (context, isEnabled, _) {
+              final colorScheme = Theme.of(context).colorScheme;
+              return IconButton(
+                icon: Icon(
+                  isEnabled ? Icons.volume_up : Icons.volume_off,
+                  color: isEnabled
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurface.withValues(alpha: 0.38),
+                  size: 22,
+                ),
+                tooltip: isEnabled ? 'Sesi Kapat' : 'Sesi Aç',
+                onPressed: () => context.read<DeviceProvider>().toggleSound(),
+              );
+            },
+          ),
         if (!kIsWeb)
-        Selector<DeviceProvider, int>(
-          selector: (_, p) => p.logLines.length,
-          builder: (context, logCount, _) {
-            return IconButton(
-              icon: Badge(
-                isLabelVisible: logCount > 0,
-                label: Text('$logCount', style: const TextStyle(fontSize: 9)),
-                child: const Icon(Icons.terminal, size: 22),
-              ),
-              tooltip: 'Konsol',
-              onPressed: () {
-                final provider = context.read<DeviceProvider>();
-                LogConsoleSheet.show(context, provider, _logScrollController);
-              },
-            );
-          },
-        ),
+          Selector<DeviceProvider, int>(
+            selector: (_, p) => p.logLines.length,
+            builder: (context, logCount, _) {
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: logCount > 0,
+                  label: Text('$logCount', style: const TextStyle(fontSize: 9)),
+                  child: const Icon(Icons.terminal, size: 22),
+                ),
+                tooltip: 'Konsol',
+                onPressed: () {
+                  final provider = context.read<DeviceProvider>();
+                  LogConsoleSheet.show(context, provider, _logScrollController);
+                },
+              );
+            },
+          ),
         if (!kIsWeb)
-        IconButton(
-          icon: const Icon(Icons.refresh, size: 22),
-          tooltip: 'Cihazları Tara',
-          onPressed: () => context.read<DeviceProvider>().scanDevices(),
-        ),
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 22),
+            tooltip: 'Cihazları Tara',
+            onPressed: () => context.read<DeviceProvider>().scanDevices(),
+          ),
         const SizedBox(width: 4),
       ],
     );
   }
 
   Widget _buildInputSection() {
-    return Selector<AppDataProvider, (List<MeterData>, String, String, String, ReadingMode)>(
+    return Selector<
+      AppDataProvider,
+      (List<MeterData>, String, String, String, ReadingMode)
+    >(
       selector: (_, p) {
         if (kIsWeb) {
           return (p.meterList, '', '', '', p.selectedReadingMode);
         }
         final dp = p as DeviceProvider;
-        return (p.meterList, dp.heatSecondaryIds, dp.waterSecondaryIds, dp.daireIds, p.selectedReadingMode);
+        return (
+          p.meterList,
+          dp.heatSecondaryIds,
+          dp.waterSecondaryIds,
+          dp.daireIds,
+          p.selectedReadingMode,
+        );
       },
       builder: (context, data, _) {
         final meterList = data.$1;
@@ -540,10 +567,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (kIsWeb) {
           final daireList = meterList.map((m) => m.flatNo).toList();
-          final heatList = meterList.map((m) => m.getHeatMeterIdDisplay()).toList();
-          final waterList = meterList.map((m) => m.getWaterMeterIdDisplay()).toList();
+          final heatList = meterList
+              .map((m) => m.getHeatMeterIdDisplay())
+              .toList();
+          final waterList = meterList
+              .map((m) => m.getWaterMeterIdDisplay())
+              .toList();
 
-          return _buildInputSectionContainer(context, daireList, heatList, waterList, meterList.length, selectedReadingMode, isWeb: true, meters: meterList);
+          return _buildInputSectionContainer(
+            context,
+            daireList,
+            heatList,
+            waterList,
+            meterList.length,
+            selectedReadingMode,
+            isWeb: true,
+            meters: meterList,
+          );
         } else {
           final heatSecondaryIds = data.$2;
           final waterSecondaryIds = data.$3;
@@ -552,75 +592,93 @@ class _HomeScreenState extends State<HomeScreen> {
           int heatLines = heatSecondaryIds.split('\n').length;
           int waterLines = waterSecondaryIds.split('\n').length;
           int daireLines = daireIds.split('\n').length;
-          int linesCount = [heatLines, waterLines, daireLines].reduce((a, b) => a > b ? a : b);
+          int linesCount = [
+            heatLines,
+            waterLines,
+            daireLines,
+          ].reduce((a, b) => a > b ? a : b);
           if (linesCount < 4) linesCount = 4;
 
           final daireList = daireIds.split('\n');
           final heatList = heatSecondaryIds.split('\n');
           final waterList = waterSecondaryIds.split('\n');
 
-          return _buildInputSectionContainer(context, daireList, heatList, waterList, linesCount, selectedReadingMode, isWeb: false, meters: meterList);
+          return _buildInputSectionContainer(
+            context,
+            daireList,
+            heatList,
+            waterList,
+            linesCount,
+            selectedReadingMode,
+            isWeb: false,
+            meters: meterList,
+          );
         }
       },
     );
   }
 
-  Widget _buildInputSectionContainer(BuildContext context, List<String> daireList, List<String> heatList, List<String> waterList, int linesCount, ReadingMode selectedReadingMode, {required bool isWeb, required List<MeterData> meters}) {
-        String getRow(List<String> list, int i) =>
-            (i < list.length) ? list[i] : '';
+  Widget _buildInputSectionContainer(
+    BuildContext context,
+    List<String> daireList,
+    List<String> heatList,
+    List<String> waterList,
+    int linesCount,
+    ReadingMode selectedReadingMode, {
+    required bool isWeb,
+    required List<MeterData> meters,
+  }) {
+    String getRow(List<String> list, int i) => (i < list.length) ? list[i] : '';
 
-        String getTooltip(int i) {
-          if (i >= meters.length) return '';
-          final meter = meters[i];
-          final ad = meter.adSoyad;
-          return ad != null && ad.isNotEmpty ? ad : '';
-        }
+    String getTooltip(int i) {
+      if (i >= meters.length) return '';
+      final meter = meters[i];
+      final ad = meter.adSoyad;
+      return ad != null && ad.isNotEmpty ? ad : '';
+    }
 
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
-        final isDark = theme.brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-        final Color bgSurface = isDark ? const Color(0xFF1E293B) : Colors.white;
-        final Color bgHeader  = isDark ? const Color(0xFF0F172A) : const Color(0xFFF5EFE6);
-        final Color borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFD6CFC4);
-        final Color textMain  = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1C1917);
-        final Color textMuted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF78716C);
-        final Color inputBg   = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final Color bgSurface = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final Color bgHeader = isDark
+        ? const Color(0xFF0F172A)
+        : const Color(0xFFF5EFE6);
+    final Color borderColor = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFD6CFC4);
+    final Color textMain = isDark
+        ? const Color(0xFFF8FAFC)
+        : const Color(0xFF1C1917);
+    final Color textMuted = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF78716C);
+    final Color inputBg = isDark ? const Color(0xFF0F172A) : Colors.white;
 
-        const int flexDaire = 2;
-        const int flexSayac = 4;
+    const int flexDaire = 2;
+    const int flexSayac = 4;
 
-        Widget buildDataRow(int i) {
-          final mode = selectedReadingMode;
-          final tooltipText = getTooltip(i);
-          return Container(
-            height: 48,
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: borderColor, width: 0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: flexDaire,
-                  child: Center(
-                    child: tooltipText.isNotEmpty
-                      ? Tooltip(
-                          message: tooltipText,
-                          child: Text(
-                            getRow(daireList, i).isEmpty ? '${i + 1}' : getRow(daireList, i),
-                            style: TextStyle(
-                              color: textMain,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      : Text(
-                          getRow(daireList, i).isEmpty ? '${i + 1}' : getRow(daireList, i),
+    Widget buildDataRow(int i) {
+      final mode = selectedReadingMode;
+      final tooltipText = getTooltip(i);
+      return Container(
+        height: 48,
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: borderColor, width: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              flex: flexDaire,
+              child: Center(
+                child: tooltipText.isNotEmpty
+                    ? Tooltip(
+                        message: tooltipText,
+                        child: Text(
+                          getRow(daireList, i).isEmpty
+                              ? '${i + 1}'
+                              : getRow(daireList, i),
                           style: TextStyle(
                             color: textMain,
                             fontSize: 14,
@@ -629,347 +687,394 @@ class _HomeScreenState extends State<HomeScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                      )
+                    : Text(
+                        getRow(daireList, i).isEmpty
+                            ? '${i + 1}'
+                            : getRow(daireList, i),
+                        style: TextStyle(
+                          color: textMain,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
+            ),
+            if (mode == ReadingMode.heat || mode == ReadingMode.both)
+              Expanded(
+                flex: flexSayac,
+                child: Container(
+                  height: 36,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: inputBg,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: borderColor, width: 0.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      getRow(heatList, i),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: textMain,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
                   ),
                 ),
-                if (mode == ReadingMode.heat || mode == ReadingMode.both)
-                  Expanded(
-                    flex: flexSayac,
-                    child: Container(
-                      height: 36,
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: inputBg,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: borderColor, width: 0.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          getRow(heatList, i),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: textMain,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                if (mode == ReadingMode.water || mode == ReadingMode.both)
-                  Expanded(
-                    flex: flexSayac,
-                    child: Container(
-                      height: 36,
-                      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: inputBg,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: borderColor, width: 0.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          getRow(waterList, i),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: textMain,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: bgSurface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                blurRadius: isDark ? 15 : 12,
-                spreadRadius: 0,
-                offset: const Offset(0, 4),
               ),
-            ],
-            border: Border.all(color: borderColor, width: 1),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+            if (mode == ReadingMode.water || mode == ReadingMode.both)
+              Expanded(
+                flex: flexSayac,
+                child: Container(
+                  height: 36,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.purple.withValues(alpha: 0.15),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    color: inputBg,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: borderColor, width: 0.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      getRow(waterList, i),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: textMain,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: bgSurface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: isDark ? 15 : 12,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.purple.withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
-                      Row(
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.purple.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.list_alt,
+                          color: AppTheme.purple,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Sayaç Listesi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textMain,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!isWeb)
+                    TextButton.icon(
+                      onPressed: () async {
+                        final provider = context.read<DeviceProvider>();
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+                        final success = await provider.importFromExcel();
+                        if (success && mounted) {
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: colorScheme.onPrimary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Excel Listesi Başarıyla Yüklendi',
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: AppTheme.success,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.file_upload, size: 18),
+                      label: const Text("Excel'den Yükle"),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.purple,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        backgroundColor: AppTheme.purple.withValues(alpha: 0.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            Divider(height: 1, thickness: 1, color: borderColor),
+
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: inputBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: TextField(
+                      key: const ValueKey('siteNameInput'),
+                      controller: _siteNameController,
+                      style: TextStyle(color: textMain, fontSize: 14),
+                      onChanged: isWeb
+                          ? null
+                          : (val) =>
+                                context.read<DeviceProvider>().setSiteName(val),
+                      readOnly: isWeb,
+                      decoration: InputDecoration(
+                        labelText: 'Site / Apartman Adı',
+                        labelStyle: TextStyle(color: textMuted),
+                        hintText: 'örn: A Blok',
+                        hintStyle: TextStyle(color: textMuted),
+                        prefixIcon: Icon(Icons.location_city, color: textMuted),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Offstage(
+                    offstage: true,
+                    child: Column(
+                      children: [
+                        TextField(
+                          key: const ValueKey('daireInput'),
+                          controller: _daireController,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          onChanged: isWeb
+                              ? null
+                              : (val) => context
+                                    .read<DeviceProvider>()
+                                    .setDaireIds(val),
+                        ),
+                        TextField(
+                          key: const ValueKey('heatInput'),
+                          controller: _heatController,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          onChanged: isWeb
+                              ? null
+                              : (val) => context
+                                    .read<DeviceProvider>()
+                                    .setHeatSecondaryIds(val),
+                        ),
+                        TextField(
+                          key: const ValueKey('waterInput'),
+                          controller: _waterController,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          onChanged: isWeb
+                              ? null
+                              : (val) => context
+                                    .read<DeviceProvider>()
+                                    .setWaterSecondaryIds(val),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  Theme(
+                    data: theme.copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      key: const ValueKey('meters_expansion_tile'),
+                      tilePadding: EdgeInsets.zero,
+                      title: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.purple.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.list_alt,
-                              color: AppTheme.purple,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
+                          Icon(Icons.table_rows, color: textMuted, size: 20),
+                          const SizedBox(width: 8),
                           Text(
-                            'Sayaç Listesi',
+                            "Daire & Sayaç Listesi ($linesCount Daire)",
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
                               color: textMain,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                      if (!isWeb)
-                      TextButton.icon(
-                        onPressed: () async {
-                          final provider = context.read<DeviceProvider>();
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
-                          final success = await provider.importFromExcel();
-                          if (success && mounted) {
-                            scaffoldMessenger.showSnackBar(
-                              SnackBar(
-                                content: Row(
+                      initiallyExpanded: false,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: bgSurface,
+                            border: Border.all(color: borderColor, width: 1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: bgHeader,
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(8),
+                                  ),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: borderColor,
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
                                   children: [
-                                    Icon(Icons.check_circle, color: colorScheme.onPrimary),
-                                    const SizedBox(width: 8),
-                                    const Text('Excel Listesi Başarıyla Yüklendi'),
+                                    Expanded(
+                                      flex: flexDaire,
+                                      child: Text(
+                                        'DAİRE',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: textMuted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    if (selectedReadingMode ==
+                                            ReadingMode.heat ||
+                                        selectedReadingMode == ReadingMode.both)
+                                      Expanded(
+                                        flex: flexSayac,
+                                        child: Text(
+                                          'ISI SAYACI',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: AppTheme.heat,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    if (selectedReadingMode ==
+                                            ReadingMode.water ||
+                                        selectedReadingMode == ReadingMode.both)
+                                      Expanded(
+                                        flex: flexSayac,
+                                        child: Text(
+                                          'SICAK SU',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: AppTheme.water,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
-                                backgroundColor: AppTheme.success,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
                               ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.file_upload, size: 18),
-                        label: const Text("Excel'den Yükle"),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.purple,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          backgroundColor: AppTheme.purple.withValues(alpha: 0.1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Divider(height: 1, thickness: 1, color: borderColor),
-
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: inputBg,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: borderColor),
-                        ),
-                        child: TextField(
-                          key: const ValueKey('siteNameInput'),
-                          controller: _siteNameController,
-                          style: TextStyle(color: textMain, fontSize: 14),
-                          onChanged: isWeb ? null : (val) =>
-                              context.read<DeviceProvider>().setSiteName(val),
-                          readOnly: isWeb,
-                          decoration: InputDecoration(
-                            labelText: 'Site / Apartman Adı',
-                            labelStyle: TextStyle(color: textMuted),
-                            hintText: 'örn: A Blok',
-                            hintStyle: TextStyle(color: textMuted),
-                            prefixIcon: Icon(Icons.location_city, color: textMuted),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      Offstage(
-                        offstage: true,
-                        child: Column(
-                          children: [
-                            TextField(
-                              key: const ValueKey('daireInput'),
-                              controller: _daireController,
-                              keyboardType: TextInputType.multiline,
-                              maxLines: null,
-                              onChanged: isWeb ? null : (val) =>
-                                  context.read<DeviceProvider>().setDaireIds(val),
-                            ),
-                            TextField(
-                              key: const ValueKey('heatInput'),
-                              controller: _heatController,
-                              keyboardType: TextInputType.multiline,
-                              maxLines: null,
-                              onChanged: isWeb ? null : (val) =>
-                                  context.read<DeviceProvider>().setHeatSecondaryIds(val),
-                            ),
-                            TextField(
-                              key: const ValueKey('waterInput'),
-                              controller: _waterController,
-                              keyboardType: TextInputType.multiline,
-                              maxLines: null,
-                              onChanged: isWeb ? null : (val) =>
-                                  context.read<DeviceProvider>().setWaterSecondaryIds(val),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-                      Theme(
-                        data: theme.copyWith(dividerColor: Colors.transparent),
-                        child: ExpansionTile(
-                          key: const ValueKey('meters_expansion_tile'),
-                          tilePadding: EdgeInsets.zero,
-                          title: Row(
-                            children: [
-                              Icon(Icons.table_rows, color: textMuted, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Daire & Sayaç Listesi ($linesCount Daire)",
-                                style: TextStyle(
-                                  color: textMain,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                              SizedBox(
+                                height: linesCount * 48.0 > 240
+                                    ? 240
+                                    : linesCount * 48.0,
+                                child: ListView.builder(
+                                  controller: _inputListScrollController,
+                                  itemCount: linesCount,
+                                  itemExtent: 48.0,
+                                  itemBuilder: (context, i) => buildDataRow(i),
                                 ),
                               ),
                             ],
                           ),
-                          initiallyExpanded: false,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: bgSurface,
-                                border: Border.all(color: borderColor, width: 1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: bgHeader,
-                                      borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(8),
-                                      ),
-                                      border: Border(
-                                        bottom: BorderSide(color: borderColor, width: 1),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: flexDaire,
-                                          child: Text(
-                                            'DAİRE',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color: textMuted,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ),
-                                        if (selectedReadingMode == ReadingMode.heat || selectedReadingMode == ReadingMode.both)
-                                          Expanded(
-                                            flex: flexSayac,
-                                            child: Text(
-                                              'ISI SAYACI',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: AppTheme.heat,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ),
-                                        if (selectedReadingMode == ReadingMode.water || selectedReadingMode == ReadingMode.both)
-                                          Expanded(
-                                            flex: flexSayac,
-                                            child: Text(
-                                              'SICAK SU',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: AppTheme.water,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: linesCount * 48.0 > 240 ? 240 : linesCount * 48.0,
-                                    child: ListView.builder(
-                                      controller: _inputListScrollController,
-                                      itemCount: linesCount,
-                                      itemExtent: 48.0,
-                                      itemBuilder: (context, i) => buildDataRow(i),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildReadButton() {
@@ -1039,65 +1144,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildResultHeaderContainer(BuildContext context, int length, {required bool isWeb}) {
-        final colorScheme = Theme.of(context).colorScheme;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 16, 4),
-          child: Row(
-            children: [
-              Container(
+  Widget _buildResultHeaderContainer(
+    BuildContext context,
+    int length, {
+    required bool isWeb,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 16, 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.success.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.success.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.analytics_outlined,
+                  size: 14,
+                  color: AppTheme.success,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$length sayaç bulundu',
+                  style: const TextStyle(
+                    color: AppTheme.success,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          if (!isWeb)
+            TextButton.icon(
+              onPressed: () => context.read<DeviceProvider>().clearMeters(),
+              icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+              label: const Text('Temizle'),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.error.withValues(alpha: 0.8),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 6,
+                  vertical: 8,
                 ),
-                decoration: BoxDecoration(
-                  color: AppTheme.success.withValues(alpha: 0.15),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.success.withValues(alpha: 0.3),
-                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.analytics_outlined,
-                      size: 14,
-                      color: AppTheme.success,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$length sayaç bulundu',
-                      style: const TextStyle(
-                        color: AppTheme.success,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
+                backgroundColor: colorScheme.error.withValues(alpha: 0.1),
               ),
-              const Spacer(),
-              if (!isWeb)
-              TextButton.icon(
-                onPressed: () => context.read<DeviceProvider>().clearMeters(),
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: const Text('Temizle'),
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.error.withValues(alpha: 0.8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: colorScheme.error.withValues(alpha: 0.1),
-                ),
-              ),
-            ],
-          ),
-        );
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRetryButtonSliver() {
@@ -1154,19 +1260,21 @@ class _HomeScreenState extends State<HomeScreen> {
           delegate: SliverChildBuilderDelegate((context, index) {
             return Selector<AppDataProvider, (MeterData, ReadingMode)>(
               key: ValueKey('selector_$index'),
-              selector: (_, provider) => (provider.meterList[index], provider.selectedReadingMode),
+              selector: (_, provider) =>
+                  (provider.meterList[index], provider.selectedReadingMode),
               builder: (context, data, _) {
                 final meter = data.$1;
                 final mode = data.$2;
-                
+
                 bool isSuccess = false;
                 if (mode == ReadingMode.heat) {
                   isSuccess = meter.heatStatus == MeterStatus.success;
                 } else if (mode == ReadingMode.water) {
                   isSuccess = meter.waterStatus == MeterStatus.success;
                 } else if (mode == ReadingMode.both) {
-                  isSuccess = meter.heatStatus == MeterStatus.success &&
-                              meter.waterStatus == MeterStatus.success;
+                  isSuccess =
+                      meter.heatStatus == MeterStatus.success &&
+                      meter.waterStatus == MeterStatus.success;
                 }
 
                 return MeterCard(
@@ -1236,8 +1344,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Text(
               kIsWeb
-                ? 'Saha ekibi okuma başlattığında canlı olarak burada görünecektir.'
-                : 'Cihazı bağlayıp ayarlarınızı tamamladıktan sonra\n"Sayaçları Oku" butonuna basarak işleme başlayabilirsiniz.',
+                  ? 'Saha ekibi okuma başlattığında canlı olarak burada görünecektir.'
+                  : 'Cihazı bağlayıp ayarlarınızı tamamladıktan sonra\n"Sayaçları Oku" butonuna basarak işleme başlayabilirsiniz.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1259,11 +1367,18 @@ class _HomeScreenState extends State<HomeScreen> {
       final List<MeterData> meterList = provider.meterList;
       final ReadingMode mode = provider.selectedReadingMode;
 
-      final csvContent = await compute<(List<MeterData>, ReadingMode), String>(_generateCSVString, (meterList, mode));
+      final csvContent = await compute<(List<MeterData>, ReadingMode), String>(
+        _generateCSVString,
+        (meterList, mode),
+      );
 
       if (kIsWeb) {
-        final fileName = 'SayacRapor_${siteName}_${DateTime.now().toIso8601String().replaceAll(':', '-')}.csv';
-        await ExcelService.saveAndShareExcel(Uint8List.fromList(csvContent.codeUnits), fileName);
+        final fileName =
+            'SayacRapor_${siteName}_${DateTime.now().toIso8601String().replaceAll(':', '-')}.csv';
+        await ExcelService.saveAndShareExcel(
+          Uint8List.fromList(csvContent.codeUnits),
+          fileName,
+        );
         return;
       }
 
@@ -1300,11 +1415,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final List<MeterData> meterList = provider.meterList;
       final ReadingMode mode = provider.selectedReadingMode;
 
-      final fileBytes = await compute<(List<MeterData>, String, ReadingMode), List<int>?>(_generateExcelBytes, (
-        meterList,
-        siteName,
-        mode,
-      ));
+      final fileBytes =
+          await compute<(List<MeterData>, String, ReadingMode), List<int>?>(
+            _generateExcelBytes,
+            (meterList, siteName, mode),
+          );
 
       if (fileBytes != null) {
         final dateStr = DateTime.now()
@@ -1313,7 +1428,10 @@ class _HomeScreenState extends State<HomeScreen> {
             .split('.')[0];
         final fileName = 'SayacRapor_${siteName}_$dateStr.xlsx';
 
-        await ExcelService.saveAndShareExcel(Uint8List.fromList(fileBytes), fileName);
+        await ExcelService.saveAndShareExcel(
+          Uint8List.fromList(fileBytes),
+          fileName,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -1324,7 +1442,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showExportOptionsDialog(BuildContext context, dynamic provider, {required bool isWeb}) {
+  void _showExportOptionsDialog(
+    BuildContext context,
+    dynamic provider, {
+    required bool isWeb,
+  }) {
     final actualProvider = isWeb ? context.read<CloudProvider>() : provider;
     showModalBottomSheet(
       context: context,
@@ -1416,7 +1538,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isScrolling = false;
 
   void _scrollToIndex(int index) {
-    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused) return;
+    if (!_scrollController.hasClients || _isScrolling || _isAutoScrollPaused) {
+      return;
+    }
 
     double itemHeight = 115.0;
     double topOffset = 650.0;
@@ -1425,13 +1549,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _isScrolling = true;
 
-    _scrollController.animateTo(
-      targetOffset,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-    ).then((_) {
-      _isScrolling = false;
-    });
+    _scrollController
+        .animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+        )
+        .then((_) {
+          _isScrolling = false;
+        });
   }
 
   void _showAddManualMeterDialog(BuildContext context) {
@@ -1460,7 +1586,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 8,
+          ),
           actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           title: Row(
             children: [
@@ -1500,28 +1629,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Manuel olarak yeni bir daire ve sayaç endeks bilgisi ekleyin.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                     ),
                   ),
                   const SizedBox(height: 18),
-                  
+
                   TextFormField(
                     controller: daireController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Daire No *',
-                      labelStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                      prefixIcon: Icon(Icons.meeting_room_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.meeting_room_outlined,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                     validator: (value) {
@@ -1535,21 +1684,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   TextFormField(
                     controller: heatSerialController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Isı Sayacı Seri No',
-                      labelStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                      prefixIcon: Icon(Icons.numbers_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.numbers_outlined,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -1557,46 +1724,89 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   TextFormField(
                     controller: heatIndexController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Isı Enerji Endeksi (kWh)',
-                      labelStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                      prefixIcon: Icon(Icons.flash_on_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.flash_on_outlined,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
-                  Divider(height: 24, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+
+                  Divider(
+                    height: 24,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
+                  ),
 
                   TextFormField(
                     controller: waterSerialController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Sıcak Su Seri No',
-                      labelStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                      prefixIcon: Icon(Icons.numbers_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.numbers_outlined,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -1604,22 +1814,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   TextFormField(
                     controller: waterIndexController,
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Sıcak Su Endeksi (m³)',
-                      labelStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                      prefixIcon: Icon(Icons.water_drop_outlined, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                      labelStyle: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.water_drop_outlined,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFFCBD5E1),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
@@ -1631,7 +1861,10 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1639,7 +1872,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 'İptal',
                 style: TextStyle(
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1650,21 +1885,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   final provider = context.read<DeviceProvider>();
                   provider.addManualMeter(
                     daireNo: daireController.text,
-                    heatMeterId: heatSerialController.text.isEmpty ? 'Manuel' : heatSerialController.text,
-                    waterMeterId: waterSerialController.text.isEmpty ? 'Manuel' : waterSerialController.text,
+                    heatMeterId: heatSerialController.text.isEmpty
+                        ? 'Manuel'
+                        : heatSerialController.text,
+                    waterMeterId: waterSerialController.text.isEmpty
+                        ? 'Manuel'
+                        : waterSerialController.text,
                     heatIndex: heatIndexController.text,
                     waterIndex: waterIndexController.text,
                   );
-                  
+
                   Navigator.pop(dialogContext);
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
                         children: [
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 12),
-                          Text('${daireController.text} Nolu Daire Manuel Olarak Eklendi'),
+                          Text(
+                            '${daireController.text} Nolu Daire Manuel Olarak Eklendi',
+                          ),
                         ],
                       ),
                       backgroundColor: AppTheme.success,
@@ -1680,7 +1921,10 @@ class _HomeScreenState extends State<HomeScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1705,17 +1949,17 @@ String _generateCSVString((List<MeterData>, ReadingMode) data) {
 
   final headers = <String>[];
   headers.add('Daire No');
-  
+
   if (mode == ReadingMode.heat || mode == ReadingMode.both) {
     headers.add('Isı Sayaç No');
     headers.add('Isı Enerji (kWh)');
   }
-  
+
   if (mode == ReadingMode.water || mode == ReadingMode.both) {
     headers.add('Su Sayaç No');
     headers.add('Su Hacim (m³)');
   }
-  
+
   headers.add('Son Okuma Tarihi');
   headers.add('Durum');
 
@@ -1730,17 +1974,17 @@ String _generateCSVString((List<MeterData>, ReadingMode) data) {
 
     final rowData = <String>[];
     rowData.add(m.flatNo);
-    
+
     if (mode == ReadingMode.heat || mode == ReadingMode.both) {
       rowData.add(m.getHeatMeterIdDisplay());
       rowData.add(m.getHeatIndexDisplay());
     }
-    
+
     if (mode == ReadingMode.water || mode == ReadingMode.both) {
       rowData.add(m.getWaterMeterIdDisplay());
       rowData.add(m.getWaterIndexDisplay());
     }
-    
+
     rowData.add(dateStr);
     rowData.add(statusStr);
 
@@ -1768,24 +2012,27 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
 
   final headers = <String>[];
   headers.add('Daire No');
-  
+
   if (mode == ReadingMode.heat || mode == ReadingMode.both) {
     headers.add('Isı Sayaç No');
     headers.add('Isı Enerji (kWh)');
   }
-  
+
   if (mode == ReadingMode.water || mode == ReadingMode.both) {
     headers.add('Su Sayaç No');
     headers.add('Su Hacim (m³)');
   }
-  
+
   headers.add('Son Okuma Tarihi');
   headers.add('Durum');
 
   sheet.appendRow([excel_pkg.TextCellValue('Site/Apartman Adı: $siteName')]);
   sheet.merge(
     excel_pkg.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
-    excel_pkg.CellIndex.indexByColumnRow(columnIndex: headers.length - 1, rowIndex: 0),
+    excel_pkg.CellIndex.indexByColumnRow(
+      columnIndex: headers.length - 1,
+      rowIndex: 0,
+    ),
   );
 
   sheet.appendRow(headers.map((h) => excel_pkg.TextCellValue(h)).toList());
@@ -1806,17 +2053,17 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
 
     final rowData = <excel_pkg.CellValue>[];
     rowData.add(excel_pkg.TextCellValue(m.flatNo));
-    
+
     if (mode == ReadingMode.heat || mode == ReadingMode.both) {
       rowData.add(excel_pkg.TextCellValue(m.getHeatMeterIdDisplay()));
       rowData.add(excel_pkg.TextCellValue(m.getHeatIndexDisplay()));
     }
-    
+
     if (mode == ReadingMode.water || mode == ReadingMode.both) {
       rowData.add(excel_pkg.TextCellValue(m.getWaterMeterIdDisplay()));
       rowData.add(excel_pkg.TextCellValue(m.getWaterIndexDisplay()));
     }
-    
+
     rowData.add(excel_pkg.TextCellValue(dateStr));
     rowData.add(excel_pkg.TextCellValue(statusStr));
 
@@ -1825,17 +2072,17 @@ List<int>? _generateExcelBytes((List<MeterData>, String, ReadingMode) data) {
 
   int colIndex = 0;
   sheet.setColumnWidth(colIndex++, 15);
-  
+
   if (mode == ReadingMode.heat || mode == ReadingMode.both) {
     sheet.setColumnWidth(colIndex++, 20);
     sheet.setColumnWidth(colIndex++, 20);
   }
-  
+
   if (mode == ReadingMode.water || mode == ReadingMode.both) {
     sheet.setColumnWidth(colIndex++, 20);
     sheet.setColumnWidth(colIndex++, 20);
   }
-  
+
   sheet.setColumnWidth(colIndex++, 25);
   sheet.setColumnWidth(colIndex++, 15);
 
