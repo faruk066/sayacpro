@@ -1,4 +1,5 @@
-import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+
 
 class MBusRawData {
   final String meterId;
@@ -94,6 +95,11 @@ class MBusParser {
       buffer.write((b & 0x0F).toRadixString(16));
     }
     return buffer.toString();
+  }
+
+  @visibleForTesting
+  static double decodeBcdIntForTesting(List<int> bytes) {
+    return _decodeBcdInt(bytes);
   }
 
   static double _decodeBcdInt(List<int> bytes) {
