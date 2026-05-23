@@ -91,8 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _waterController.dispose();
     super.dispose();
   }
-
-  @override
+  // ignore: annotate_overrides
   Widget build(BuildContext context) {
     if (kIsWeb) {
       final cloudProvider = context.read<CloudProvider>();
