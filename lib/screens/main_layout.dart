@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import 'dashboard_screen.dart';
+import 'meters_screen.dart';
+import 'import_screen.dart';
+import 'export_screen.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({Key? key}) : super(key: key);
+  const MainLayout({super.key});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -360,12 +363,19 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   Widget _buildBody() {
-    if (_currentPage == 'dashboard') {
-      return const DashboardScreen();
+    switch (_currentPage) {
+      case 'dashboard':
+        return const DashboardScreen();
+      case 'meters':
+        return const MetersScreen();
+      case 'import':
+        return const ImportScreen();
+      case 'export':
+        return const ExportScreen();
+      default:
+        return Center(
+          child: Text('Sayfa Yapım Aşamasında: $_currentPage'),
+        );
     }
-    // Placeholder for other pages
-    return Center(
-      child: Text('Sayfa: $_currentPage'),
-    );
   }
 }
