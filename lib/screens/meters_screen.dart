@@ -108,28 +108,72 @@ class _MetersScreenState extends State<MetersScreen> {
               const SizedBox(height: 24),
 
               // Filters
-              Row(
-                children: [
-                  _buildDropdown(isDark, 'Tip Seçimi', ['all', 'heat', 'water'], ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'], _filterType, (val) => setState(() => _filterType = val!)),
-                  const SizedBox(width: 12),
-                  _buildDropdown(isDark, 'Durum', ['all', 'active', 'pending', 'error'], ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'], _filterStatus, (val) => setState(() => _filterStatus = val!)),
-                  const Spacer(),
-                  // Quick tags
-                  Row(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  if (width < 600) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: _buildDropdown(isDark, 'Tip Seçimi', ['all', 'heat', 'water'], ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'], _filterType, (val) => setState(() => _filterType = val!))),
+                            const SizedBox(width: 12),
+                            Expanded(child: _buildDropdown(isDark, 'Durum', ['all', 'active', 'pending', 'error'], ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'], _filterStatus, (val) => setState(() => _filterStatus = val!))),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildQuickTag('all', 'Tümü', isDark),
+                            const SizedBox(width: 8),
+                            _buildQuickTag('heat', 'Isı', isDark),
+                            const SizedBox(width: 8),
+                            _buildQuickTag('water', 'Su', isDark),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Row(
                     children: [
-                      _buildQuickTag('all', 'Tümü', isDark),
-                      const SizedBox(width: 8),
-                      _buildQuickTag('heat', 'Isı', isDark),
-                      const SizedBox(width: 8),
-                      _buildQuickTag('water', 'Su', isDark),
+                      _buildDropdown(isDark, 'Tip Seçimi', ['all', 'heat', 'water'], ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'], _filterType, (val) => setState(() => _filterType = val!)),
+                      const SizedBox(width: 12),
+                      _buildDropdown(isDark, 'Durum', ['all', 'active', 'pending', 'error'], ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'], _filterStatus, (val) => setState(() => _filterStatus = val!)),
+                      const Spacer(),
+                      // Quick tags
+                      Row(
+                        children: [
+                          _buildQuickTag('all', 'Tümü', isDark),
+                          const SizedBox(width: 8),
+                          _buildQuickTag('heat', 'Isı', isDark),
+                          const SizedBox(width: 8),
+                          _buildQuickTag('water', 'Su', isDark),
+                        ],
+                      )
                     ],
-                  )
-                ],
+                  );
+                },
               ),
               const SizedBox(height: 24),
 
               // Content
-              _viewMode == 'grid' ? _buildGridView(filteredMeters, isDark) : _buildListView(filteredMeters, isDark),
+              _viewMode == 'grid'
+                  ? LayoutBuilder(
+                      builder: (context, constraints) {
+                        int crossAxisCount = 4;
+                        if (constraints.maxWidth < 600) {
+                          crossAxisCount = 1;
+                        } else if (constraints.maxWidth < 900) {
+                          crossAxisCount = 2;
+                        } else if (constraints.maxWidth < 1200) {
+                          crossAxisCount = 3;
+                        }
+                        return _buildGridView(filteredMeters, isDark, crossAxisCount);
+                      },
+                    )
+                  : _buildListView(filteredMeters, isDark),
             ],
           ),
         );
@@ -190,13 +234,13 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-  Widget _buildGridView(List<dynamic> meters, bool isDark) {
+  Widget _buildGridView(List<dynamic> meters, bool isDark, int crossAxisCount) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 1.5,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: crossAxisCount == 1 ? 2.5 : 1.5,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),

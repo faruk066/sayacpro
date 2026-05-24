@@ -80,57 +80,87 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Overview Cards
-              Row(
-                children: [
-                  Expanded(child: _buildStatCard(context, 'Toplam Sayaç', totalMeters.toString(), Icons.speed, Colors.purple, '+12', true)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatCard(context, 'Isı Sayacı', heatMeters.toString(), Icons.local_fire_department, Colors.orange, '+5', true)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatCard(context, 'Su Sayacı', waterMeters.toString(), Icons.water_drop, Colors.blue, '+7', true)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildStatCard(context, 'Hatalı', errorMeters.toString(), Icons.warning_amber_rounded, Colors.red, '-2', false)),
-                ],
-              ),
-              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  int crossAxisCount = 4;
+                  if (width < 600) {
+                    crossAxisCount = 1;
+                  } else if (width < 900) {
+                    crossAxisCount = 2;
+                  }
 
-              // Charts Row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: _buildBarChartCard(context),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 3,
-                    child: _buildPieChartCard(context, syncedReadings, pendingReadings, errorMeters),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 4,
-                    child: _buildLineChartCard(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  return Column(
+                    children: [
+                      // Overview Cards
+                      GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: width < 600 ? 2.5 : 1.5,
+                        children: [
+                          _buildStatCard(context, 'Toplam Sayaç', totalMeters.toString(), Icons.speed, Colors.purple, '+12', true),
+                          _buildStatCard(context, 'Isı Sayacı', heatMeters.toString(), Icons.local_fire_department, Colors.orange, '+5', true),
+                          _buildStatCard(context, 'Su Sayacı', waterMeters.toString(), Icons.water_drop, Colors.blue, '+7', true),
+                          _buildStatCard(context, 'Hatalı', errorMeters.toString(), Icons.warning_amber_rounded, Colors.red, '-2', false),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
 
-              // Recent Readings Table
-              _buildRecentReadingsTable(context, meters),
-              const SizedBox(height: 24),
+                      // Charts Row
+                      if (width < 900) ...[
+                        _buildBarChartCard(context),
+                        const SizedBox(height: 16),
+                        _buildPieChartCard(context, syncedReadings, pendingReadings, errorMeters),
+                        const SizedBox(height: 16),
+                        _buildLineChartCard(context),
+                      ] else ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: _buildBarChartCard(context),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 3,
+                              child: _buildPieChartCard(context, syncedReadings, pendingReadings, errorMeters),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 4,
+                              child: _buildLineChartCard(context),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 24),
 
-              // Quick Stats Bar
-              Row(
-                children: [
-                  Expanded(child: _buildQuickStat(context, syncedReadings.toString(), 'Senkronize', Icons.check_circle, Colors.green)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildQuickStat(context, pendingReadings.toString(), 'Bekleyen', Icons.access_time, Colors.orange)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildQuickStat(context, errorMeters.toString(), 'Hatalı', Icons.error_outline, Colors.red)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildQuickStat(context, todayReadings.toString(), 'Bugün', Icons.show_chart, Colors.purple)),
-                ],
+                      // Recent Readings Table
+                      _buildRecentReadingsTable(context, meters),
+                      const SizedBox(height: 24),
+
+                      // Quick Stats Bar
+                      GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: width < 600 ? 3.5 : 2.5,
+                        children: [
+                          _buildQuickStat(context, syncedReadings.toString(), 'Senkronize', Icons.check_circle, Colors.green),
+                          _buildQuickStat(context, pendingReadings.toString(), 'Bekleyen', Icons.access_time, Colors.orange),
+                          _buildQuickStat(context, errorMeters.toString(), 'Hatalı', Icons.error_outline, Colors.red),
+                          _buildQuickStat(context, todayReadings.toString(), 'Bugün', Icons.show_chart, Colors.purple),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),

@@ -146,64 +146,88 @@ class _ExportScreenState extends State<ExportScreen> {
           const SizedBox(height: 24),
 
           // Format & Scope
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildFormatSection(isDark),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _buildScopeSection(isDark),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+
+              Widget formatSection = _buildFormatSection(isDark);
+              Widget scopeSection = _buildScopeSection(isDark);
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    formatSection,
+                    const SizedBox(height: 24),
+                    scopeSection,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: formatSection),
+                  const SizedBox(width: 24),
+                  Expanded(child: scopeSection),
+                ],
+              );
+            }
           ),
           const SizedBox(height: 24),
 
           // Action Section
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0B1120) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0B1120) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+                ),
+                child: Flex(
+                  direction: isMobile ? Axis.vertical : Axis.horizontal,
+                  mainAxisAlignment: isMobile ? MainAxisAlignment.start : MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: isMobile ? CrossAxisAlignment.stretch : CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      '${_formatLabel(_selectedFormat)} - ${_scopeLabel(_selectedScope)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.grey.shade900,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_formatLabel(_selectedFormat)} - ${_scopeLabel(_selectedScope)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.grey.shade900,
+                          ),
+                        ),
+                        Text(
+                          'Veri dosyası oluşturulacak',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Veri dosyası oluşturulacak',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                    if (isMobile) const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _isExporting ? null : _handleExport,
+                      icon: Icon(_isExporting ? Icons.hourglass_top : (_exportComplete ? Icons.check_circle : Icons.download), size: 18),
+                      label: Text(_isExporting ? 'Oluşturuluyor...' : (_exportComplete ? 'Tamamlandı!' : 'Dışa Aktar')),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _exportComplete ? Colors.green : const Color(0xFF8B5CF6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: _isExporting ? null : _handleExport,
-                  icon: Icon(_isExporting ? Icons.hourglass_top : (_exportComplete ? Icons.check_circle : Icons.download), size: 18),
-                  label: Text(_isExporting ? 'Oluşturuluyor...' : (_exportComplete ? 'Tamamlandı!' : 'Dışa Aktar')),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _exportComplete ? Colors.green : const Color(0xFF8B5CF6),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
+              );
+            }
           ),
         ],
       ),

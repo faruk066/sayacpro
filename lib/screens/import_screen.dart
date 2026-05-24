@@ -275,73 +275,89 @@ class _ImportScreenState extends State<ImportScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Telegram Formatı',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF8B5CF6),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'DAİRE NO | SAYAÇ NO | SAYAÇ TİPİ\n1 | IS0001 | 4 (Isı)\n1 | SS0001 | 6 (Su)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontFamily: 'monospace',
-                                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isMobile = constraints.maxWidth < 600;
+
+                      Widget telegramFormat = Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Polimeter Formatı',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF8B5CF6),
-                                ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Telegram Formatı',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF8B5CF6),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'blok | daire | tip | ıd2\nA | 1 | 4 | 1001\nA | 2 | 6 | 1002',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontFamily: 'monospace',
-                                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                                ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'DAİRE NO | SAYAÇ NO | SAYAÇ TİPİ\n1 | IS0001 | 4 (Isı)\n1 | SS0001 | 6 (Su)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      );
+
+                      Widget polimeterFormat = Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Polimeter Formatı',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF8B5CF6),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'blok | daire | tip | ıd2\nA | 1 | 4 | 1001\nA | 2 | 6 | 1002',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (isMobile) {
+                        return Column(
+                          children: [
+                            telegramFormat,
+                            const SizedBox(height: 16),
+                            polimeterFormat,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: telegramFormat),
+                          const SizedBox(width: 16),
+                          Expanded(child: polimeterFormat),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

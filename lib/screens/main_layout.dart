@@ -28,30 +28,56 @@ class _MainLayoutState extends State<MainLayout> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Row(
-        children: [
-          _buildSidebar(isDark),
-          Expanded(
-            child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+
+        if (isMobile) {
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            drawer: Drawer(
+              child: _buildSidebar(isDark, isMobile: true),
+            ),
+            body: Column(
               children: [
-                _buildHeader(isDark),
+                _buildHeader(isDark, isMobile: true),
                 Expanded(
                   child: _buildBody(),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
+          );
+        } else {
+          return Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: Row(
+              children: [
+                _buildSidebar(isDark, isMobile: false),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildHeader(isDark, isMobile: false),
+                      Expanded(
+                        child: _buildBody(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      },
     );
   }
 
-  Widget _buildSidebar(bool isDark) {
+  Widget _buildSidebar(bool isDark, {required bool isMobile}) {
+    final width = isMobile ? 280.0 : (_sidebarOpen ? 280.0 : 80.0);
+    final isExpanded = isMobile || _sidebarOpen;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: _sidebarOpen ? 280 : 80,
+      width: width,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         border: Border(
@@ -74,7 +100,7 @@ class _MainLayoutState extends State<MainLayout> {
               ),
             ),
             child: Row(
-              mainAxisAlignment: _sidebarOpen ? MainAxisAlignment.start : MainAxisAlignment.center,
+              mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
               children: [
                 Container(
                   width: 40,
@@ -89,7 +115,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                   child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
                 ),
-                if (_sidebarOpen) ...[
+                if (isExpanded) ...[
                   const SizedBox(width: 12),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -122,20 +148,21 @@ class _MainLayoutState extends State<MainLayout> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               children: [
-                _buildNavItem('dashboard', 'Dashboard', Icons.dashboard_outlined, 'Genel Bakış', isDark),
-                _buildNavItem('meters', 'Sayaçlar', Icons.speed_outlined, 'Sayaç Yönetimi', isDark),
-                _buildNavItem('readings', 'Okumalar', Icons.list_alt_outlined, 'Okuma Kayıtları', isDark),
-                _buildNavItem('import', 'Excel İçe Aktar', Icons.table_chart_outlined, 'Veri Aktarımı', isDark),
-                _buildNavItem('export', 'Dışa Aktar', Icons.download_outlined, 'CSV/Excel Çıktısı', isDark),
-                _buildNavItem('settings', 'Ayarlar', Icons.settings_outlined, 'Yapılandırma', isDark),
+                _buildNavItem('dashboard', 'Dashboard', Icons.dashboard_outlined, 'Genel Bakış', isDark, isExpanded),
+                _buildNavItem('meters', 'Sayaçlar', Icons.speed_outlined, 'Sayaç Yönetimi', isDark, isExpanded),
+                _buildNavItem('readings', 'Okumalar', Icons.list_alt_outlined, 'Okuma Kayıtları', isDark, isExpanded),
+                _buildNavItem('import', 'Excel İçe Aktar', Icons.table_chart_outlined, 'Veri Aktarımı', isDark, isExpanded),
+                _buildNavItem('export', 'Dışa Aktar', Icons.download_outlined, 'CSV/Excel Çıktısı', isDark, isExpanded),
+                _buildNavItem('settings', 'Ayarlar', Icons.settings_outlined, 'Yapılandırma', isDark, isExpanded),
               ],
             ),
           ),
 
           // Toggle Button
-          InkWell(
-            onTap: _toggleSidebar,
-            child: Container(
+          if (!isMobile)
+            InkWell(
+              onTap: _toggleSidebar,
+              child: Container(
               height: 48,
               decoration: BoxDecoration(
                 border: Border(
@@ -157,13 +184,17 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  Widget _buildNavItem(String id, String label, IconData icon, String description, bool isDark) {
+  Widget _buildNavItem(String id, String label, IconData icon, String description, bool isDark, bool isExpanded) {
     final isActive = _currentPage == id;
     return InkWell(
       onTap: () {
         setState(() {
           _currentPage = id;
         });
+        // In mobile view, close the drawer when a navigation item is tapped
+        if (Scaffold.of(context).isDrawerOpen) {
+          Navigator.of(context).pop();
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -176,7 +207,7 @@ class _MainLayoutState extends State<MainLayout> {
               : Colors.transparent,
         ),
         child: Row(
-          mainAxisAlignment: _sidebarOpen ? MainAxisAlignment.start : MainAxisAlignment.center,
+          mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -185,7 +216,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ? const Color(0xFF8B5CF6)
                   : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),
-            if (_sidebarOpen) ...[
+            if (isExpanded) ...[
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -220,10 +251,10 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(bool isDark, {required bool isMobile}) {
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
         border: Border(
@@ -235,10 +266,22 @@ class _MainLayoutState extends State<MainLayout> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Search
-          Container(
-            width: 280,
-            height: 36,
+          Row(
+            children: [
+              if (isMobile) ...[
+                IconButton(
+                  icon: Icon(Icons.menu, color: isDark ? Colors.white : Colors.grey.shade900),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Search
+              if (!isMobile)
+                Container(
+                  width: 280,
+                  height: 36,
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
@@ -246,30 +289,32 @@ class _MainLayoutState extends State<MainLayout> {
                 color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Icon(Icons.search, size: 16, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Sayaç, daire veya blok ara...',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 16, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Sayaç, daire veya blok ara...',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.only(bottom: 12),
+                          ),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
+                          ),
+                        ),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.only(bottom: 12),
-                    ),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
 
           // Right side actions
@@ -318,28 +363,30 @@ class _MainLayoutState extends State<MainLayout> {
               // User Profile
               Row(
                 children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Admin',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                  if (!isMobile) ...[
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Admin',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.grey.shade900,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Teknisyen',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                        Text(
+                          'Teknisyen',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   Container(
                     width: 36,
                     height: 36,
