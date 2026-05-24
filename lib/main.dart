@@ -5,7 +5,7 @@ import 'providers/device_provider.dart';
 import 'providers/cloud_provider.dart';
 import 'providers/app_data_provider.dart';
 import 'providers/theme_provider.dart';
-import 'screens/main_layout.dart';
+import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
 import 'package:flutter/foundation.dart';
 
@@ -57,7 +57,7 @@ class SayacProApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
-          home: const MainLayout(),
+          home: const HomeScreen(),
         );
       },
     );
