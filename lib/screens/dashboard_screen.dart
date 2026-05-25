@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+<<<<<<< HEAD
 import '../models/meter_data.dart';
+=======
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
 import '../providers/app_data_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -564,7 +567,11 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildRecentReadingsTable(BuildContext context, List<MeterData> meters) {
+=======
+  Widget _buildRecentReadingsTable(BuildContext context, List<dynamic> meters) {
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -644,6 +651,7 @@ class DashboardScreen extends StatelessWidget {
                 DataColumn(label: Text('Durum', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
               ],
               rows: recentMeters.map((m) {
+<<<<<<< HEAD
                 final overallStatusName = m.overallStatus.name;
                 final isSuccess = overallStatusName == 'success';
 
@@ -658,19 +666,45 @@ class DashboardScreen extends StatelessWidget {
                   typeStr = 'Su';
                   meterId = m.waterMeterId;
                   valueStr = m.getWaterIndexDisplay();
+=======
+                final isSuccess = m.overallStatus?.name == 'success';
+
+                // Determine representation based on what is available
+                String typeStr = 'Isı';
+                String meterId = m.heatMeterId ?? '';
+                String valueStr = m.getHeatIndexDisplay() ?? '0';
+                IconData typeIcon = Icons.local_fire_department;
+                Color typeColor = Colors.orange;
+
+                if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
+                  typeStr = 'Su';
+                  meterId = m.waterMeterId;
+                  valueStr = m.getWaterIndexDisplay() ?? '0';
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                   typeIcon = Icons.water_drop;
                   typeColor = Colors.blue;
                 }
 
+<<<<<<< HEAD
                 final readTime = m.readTime;
                 String dateStr = '-';
                 if (readTime != null) {
                   dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
+=======
+                String dateStr = '-';
+                if (m.readTime != null) {
+                  final dt = m.readTime;
+                  dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                 }
 
                 return DataRow(
                   cells: [
+<<<<<<< HEAD
                     DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
+=======
+                    DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

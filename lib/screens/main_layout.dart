@@ -5,8 +5,11 @@ import 'dashboard_screen.dart';
 import 'meters_screen.dart';
 import 'import_screen.dart';
 import 'export_screen.dart';
+<<<<<<< HEAD
 import 'readings_screen.dart';
 import 'settings_screen.dart';
+=======
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -38,6 +41,7 @@ class _MainLayoutState extends State<MainLayout> {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             drawer: Drawer(
+<<<<<<< HEAD
               child: SafeArea(child: _buildSidebar(isDark, isMobile: true)),
             ),
             body: SafeArea(
@@ -47,11 +51,23 @@ class _MainLayoutState extends State<MainLayout> {
                   Expanded(child: _buildBody()),
                 ],
               ),
+=======
+              child: _buildSidebar(isDark, isMobile: true),
+            ),
+            body: Column(
+              children: [
+                _buildHeader(isDark, isMobile: true),
+                Expanded(
+                  child: _buildBody(),
+                ),
+              ],
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
             ),
           );
         } else {
           return Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
+<<<<<<< HEAD
             body: SafeArea(
               child: Row(
                 children: [
@@ -66,6 +82,22 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                 ],
               ),
+=======
+            body: Row(
+              children: [
+                _buildSidebar(isDark, isMobile: false),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildHeader(isDark, isMobile: false),
+                      Expanded(
+                        child: _buildBody(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
             ),
           );
         }
@@ -97,16 +129,24 @@ class _MainLayoutState extends State<MainLayout> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
+<<<<<<< HEAD
                   color: isDark
                       ? const Color(0xFF1E293B)
                       : Colors.grey.shade200,
+=======
+                  color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                 ),
               ),
             ),
             child: Row(
+<<<<<<< HEAD
               mainAxisAlignment: isExpanded
                   ? MainAxisAlignment.start
                   : MainAxisAlignment.center,
+=======
+              mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               children: [
                 Container(
                   width: 40,
@@ -119,11 +159,15 @@ class _MainLayoutState extends State<MainLayout> {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
+<<<<<<< HEAD
                   child: const Icon(
                     Icons.flash_on,
                     color: Colors.white,
                     size: 20,
                   ),
+=======
+                  child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                 ),
                 if (isExpanded) ...[
                   const SizedBox(width: 12),
@@ -143,9 +187,13 @@ class _MainLayoutState extends State<MainLayout> {
                         'M-Bus Yönetim',
                         style: TextStyle(
                           fontSize: 12,
+<<<<<<< HEAD
                           color: isDark
                               ? Colors.grey.shade400
                               : Colors.grey.shade500,
+=======
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                         ),
                       ),
                     ],
@@ -160,6 +208,7 @@ class _MainLayoutState extends State<MainLayout> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               children: [
+<<<<<<< HEAD
                 _buildNavItem(
                   'dashboard',
                   'Dashboard',
@@ -208,6 +257,14 @@ class _MainLayoutState extends State<MainLayout> {
                   isDark,
                   isExpanded,
                 ),
+=======
+                _buildNavItem('dashboard', 'Dashboard', Icons.dashboard_outlined, 'Genel Bakış', isDark, isExpanded),
+                _buildNavItem('meters', 'Sayaçlar', Icons.speed_outlined, 'Sayaç Yönetimi', isDark, isExpanded),
+                _buildNavItem('readings', 'Okumalar', Icons.list_alt_outlined, 'Okuma Kayıtları', isDark, isExpanded),
+                _buildNavItem('import', 'Excel İçe Aktar', Icons.table_chart_outlined, 'Veri Aktarımı', isDark, isExpanded),
+                _buildNavItem('export', 'Dışa Aktar', Icons.download_outlined, 'CSV/Excel Çıktısı', isDark, isExpanded),
+                _buildNavItem('settings', 'Ayarlar', Icons.settings_outlined, 'Yapılandırma', isDark, isExpanded),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               ],
             ),
           ),
@@ -217,6 +274,7 @@ class _MainLayoutState extends State<MainLayout> {
             InkWell(
               onTap: _toggleSidebar,
               child: Container(
+<<<<<<< HEAD
                 height: 48,
                 decoration: BoxDecoration(
                   border: Border(
@@ -235,11 +293,30 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ),
+=======
+              height: 48,
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+                  ),
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  _sidebarOpen ? Icons.chevron_left : Icons.chevron_right,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+            ),
+          ),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
         ],
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildNavItem(
     String id,
     String label,
@@ -248,6 +325,9 @@ class _MainLayoutState extends State<MainLayout> {
     bool isDark,
     bool isExpanded,
   ) {
+=======
+  Widget _buildNavItem(String id, String label, IconData icon, String description, bool isDark, bool isExpanded) {
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     final isActive = _currentPage == id;
     return InkWell(
       onTap: () {
@@ -266,6 +346,7 @@ class _MainLayoutState extends State<MainLayout> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: isActive
+<<<<<<< HEAD
               ? (isDark
                     ? const Color(0xFF8B5CF6).withValues(alpha: 0.2)
                     : const Color(0xFF8B5CF6).withValues(alpha: 0.1))
@@ -275,6 +356,13 @@ class _MainLayoutState extends State<MainLayout> {
           mainAxisAlignment: isExpanded
               ? MainAxisAlignment.start
               : MainAxisAlignment.center,
+=======
+              ? (isDark ? const Color(0xFF8B5CF6).withValues(alpha: 0.2) : const Color(0xFF8B5CF6).withValues(alpha: 0.1))
+              : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: isExpanded ? MainAxisAlignment.start : MainAxisAlignment.center,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
           children: [
             Icon(
               icon,
@@ -296,9 +384,13 @@ class _MainLayoutState extends State<MainLayout> {
                         fontWeight: FontWeight.w500,
                         color: isActive
                             ? const Color(0xFF8B5CF6)
+<<<<<<< HEAD
                             : (isDark
                                   ? Colors.grey.shade300
                                   : Colors.grey.shade700),
+=======
+                            : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                       ),
                     ),
                     Text(
@@ -307,9 +399,13 @@ class _MainLayoutState extends State<MainLayout> {
                         fontSize: 10,
                         color: isActive
                             ? const Color(0xFF8B5CF6).withValues(alpha: 0.7)
+<<<<<<< HEAD
                             : (isDark
                                   ? Colors.grey.shade500
                                   : Colors.grey.shade400),
+=======
+                            : (isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                       ),
                     ),
                   ],
@@ -327,9 +423,13 @@ class _MainLayoutState extends State<MainLayout> {
       height: 64,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24),
       decoration: BoxDecoration(
+<<<<<<< HEAD
         color: isDark
             ? const Color(0xFF0B1120).withValues(alpha: 0.8)
             : Colors.white.withValues(alpha: 0.8),
+=======
+        color: isDark ? const Color(0xFF0B1120).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
         border: Border(
           bottom: BorderSide(
             color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
@@ -343,10 +443,14 @@ class _MainLayoutState extends State<MainLayout> {
             children: [
               if (isMobile) ...[
                 IconButton(
+<<<<<<< HEAD
                   icon: Icon(
                     Icons.menu,
                     color: isDark ? Colors.white : Colors.grey.shade900,
                   ),
+=======
+                  icon: Icon(Icons.menu, color: isDark ? Colors.white : Colors.grey.shade900),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                   onPressed: () {
                     Scaffold.of(context).openDrawer();
                   },
@@ -358,6 +462,7 @@ class _MainLayoutState extends State<MainLayout> {
                 Container(
                   width: 280,
                   height: 36,
+<<<<<<< HEAD
                   decoration: BoxDecoration(
                     color: isDark
                         ? const Color(0xFF1E293B)
@@ -379,6 +484,19 @@ class _MainLayoutState extends State<MainLayout> {
                             ? Colors.grey.shade500
                             : Colors.grey.shade400,
                       ),
+=======
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+              ),
+            ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 16, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
@@ -386,18 +504,26 @@ class _MainLayoutState extends State<MainLayout> {
                             hintText: 'Sayaç, daire veya blok ara...',
                             hintStyle: TextStyle(
                               fontSize: 14,
+<<<<<<< HEAD
                               color: isDark
                                   ? Colors.grey.shade500
                                   : Colors.grey.shade400,
+=======
+                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.only(bottom: 12),
                           ),
                           style: TextStyle(
                             fontSize: 14,
+<<<<<<< HEAD
                             color: isDark
                                 ? Colors.grey.shade200
                                 : Colors.grey.shade900,
+=======
+                            color: isDark ? Colors.grey.shade200 : Colors.grey.shade900,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                           ),
                         ),
                       ),
@@ -415,12 +541,17 @@ class _MainLayoutState extends State<MainLayout> {
                 builder: (context, themeProvider, _) {
                   return IconButton(
                     icon: Icon(
+<<<<<<< HEAD
                       themeProvider.isDarkMode
                           ? Icons.light_mode
                           : Icons.dark_mode,
                       color: themeProvider.isDarkMode
                           ? Colors.yellow.shade400
                           : Colors.grey.shade600,
+=======
+                      themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                      color: themeProvider.isDarkMode ? Colors.yellow.shade400 : Colors.grey.shade600,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                       size: 20,
                     ),
                     onPressed: () => themeProvider.toggleTheme(),
@@ -432,6 +563,7 @@ class _MainLayoutState extends State<MainLayout> {
               IconButton(
                 icon: Stack(
                   children: [
+<<<<<<< HEAD
                     Icon(
                       Icons.notifications_none,
                       color: isDark
@@ -439,6 +571,9 @@ class _MainLayoutState extends State<MainLayout> {
                           : Colors.grey.shade600,
                       size: 20,
                     ),
+=======
+                    Icon(Icons.notifications_none, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600, size: 20),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                     Positioned(
                       right: 2,
                       top: 2,
@@ -457,11 +592,15 @@ class _MainLayoutState extends State<MainLayout> {
               ),
 
               const SizedBox(width: 8),
+<<<<<<< HEAD
               Container(
                 width: 1,
                 height: 24,
                 color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
               ),
+=======
+              Container(width: 1, height: 24, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               const SizedBox(width: 16),
 
               // User Profile
@@ -484,9 +623,13 @@ class _MainLayoutState extends State<MainLayout> {
                           'Teknisyen',
                           style: TextStyle(
                             fontSize: 12,
+<<<<<<< HEAD
                             color: isDark
                                 ? Colors.grey.shade400
                                 : Colors.grey.shade500,
+=======
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                           ),
                         ),
                       ],
@@ -504,11 +647,15 @@ class _MainLayoutState extends State<MainLayout> {
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
+<<<<<<< HEAD
                     child: const Icon(
                       Icons.person,
                       color: Colors.white,
                       size: 18,
                     ),
+=======
+                    child: const Icon(Icons.person, color: Colors.white, size: 18),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                   ),
                 ],
               ),
@@ -525,16 +672,26 @@ class _MainLayoutState extends State<MainLayout> {
         return const DashboardScreen();
       case 'meters':
         return const MetersScreen();
+<<<<<<< HEAD
       case 'readings':
         return const ReadingsScreen();
+=======
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
       case 'import':
         return const ImportScreen();
       case 'export':
         return const ExportScreen();
+<<<<<<< HEAD
       case 'settings':
         return const SettingsScreen();
       default:
         return Center(child: Text('Sayfa Yapım Aşamasında: $_currentPage'));
+=======
+      default:
+        return Center(
+          child: Text('Sayfa Yapım Aşamasında: $_currentPage'),
+        );
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     }
   }
 }

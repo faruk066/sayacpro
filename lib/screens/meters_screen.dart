@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+<<<<<<< HEAD
 import '../models/meter_data.dart';
+=======
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
 import '../providers/app_data_provider.dart';
 
 class MetersScreen extends StatefulWidget {
@@ -256,7 +259,11 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildGridView(List<MeterData> meters, bool isDark, int crossAxisCount) {
+=======
+  Widget _buildGridView(List<dynamic> meters, bool isDark, int crossAxisCount) {
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -269,6 +276,7 @@ class _MetersScreenState extends State<MetersScreen> {
       itemCount: meters.length,
       itemBuilder: (context, index) {
         final m = meters[index];
+<<<<<<< HEAD
         final overallStatusName = m.overallStatus.name;
         final isSuccess = overallStatusName == 'success';
         final isError = overallStatusName == 'failed';
@@ -283,6 +291,21 @@ class _MetersScreenState extends State<MetersScreen> {
           typeStr = 'Su';
           meterId = m.waterMeterId;
           valueStr = m.getWaterIndexDisplay();
+=======
+        final isSuccess = m.overallStatus?.name == 'success';
+        final isError = m.overallStatus?.name == 'failed';
+
+        String typeStr = 'Isı';
+        String meterId = m.heatMeterId ?? '';
+        String valueStr = m.getHeatIndexDisplay() ?? '0';
+        IconData typeIcon = Icons.local_fire_department;
+        Color typeColor = Colors.orange;
+
+        if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
+          typeStr = 'Su';
+          meterId = m.waterMeterId;
+          valueStr = m.getWaterIndexDisplay() ?? '0';
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
           typeIcon = Icons.water_drop;
           typeColor = Colors.blue;
         }
@@ -359,7 +382,11 @@ class _MetersScreenState extends State<MetersScreen> {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
+<<<<<<< HEAD
               _buildGridRow('Blok/Daire', m.flatNo, isDark),
+=======
+              _buildGridRow('Blok/Daire', m.flatNo ?? '-', isDark),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               const SizedBox(height: 4),
               _buildGridRow('Son Okuma', valueStr, isDark, isValueBold: true),
             ],
@@ -392,7 +419,11 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildListView(List<MeterData> meters, bool isDark) {
+=======
+  Widget _buildListView(List<dynamic> meters, bool isDark) {
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
@@ -414,6 +445,7 @@ class _MetersScreenState extends State<MetersScreen> {
             DataColumn(label: Text('Tarih', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
           ],
           rows: meters.map((m) {
+<<<<<<< HEAD
             final overallStatusName = m.overallStatus.name;
             final isSuccess = overallStatusName == 'success';
             final isError = overallStatusName == 'failed';
@@ -428,14 +460,36 @@ class _MetersScreenState extends State<MetersScreen> {
               typeStr = 'Su';
               meterId = m.waterMeterId;
               valueStr = m.getWaterIndexDisplay();
+=======
+            final isSuccess = m.overallStatus?.name == 'success';
+            final isError = m.overallStatus?.name == 'failed';
+
+            String typeStr = 'Isı';
+            String meterId = m.heatMeterId ?? '';
+            String valueStr = m.getHeatIndexDisplay() ?? '0';
+            IconData typeIcon = Icons.local_fire_department;
+            Color typeColor = Colors.orange;
+
+            if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
+              typeStr = 'Su';
+              meterId = m.waterMeterId;
+              valueStr = m.getWaterIndexDisplay() ?? '0';
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               typeIcon = Icons.water_drop;
               typeColor = Colors.blue;
             }
 
+<<<<<<< HEAD
             final readTime = m.readTime;
             String dateStr = '-';
             if (readTime != null) {
               dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
+=======
+            String dateStr = '-';
+            if (m.readTime != null) {
+              final dt = m.readTime;
+              dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
             }
 
             return DataRow(
@@ -475,7 +529,11 @@ class _MetersScreenState extends State<MetersScreen> {
                     ],
                   ),
                 ),
+<<<<<<< HEAD
                 DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
+=======
+                DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
+>>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                 DataCell(Text(valueStr, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.grey.shade900))),
                 DataCell(Text(dateStr, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500))),
               ],
