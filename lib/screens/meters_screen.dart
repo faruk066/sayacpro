@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/meter_data.dart';
 import '../providers/app_data_provider.dart';
 
 class MetersScreen extends StatefulWidget {
@@ -255,7 +256,7 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-  Widget _buildGridView(List<dynamic> meters, bool isDark, int crossAxisCount) {
+  Widget _buildGridView(List<MeterData> meters, bool isDark, int crossAxisCount) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -268,22 +269,20 @@ class _MetersScreenState extends State<MetersScreen> {
       itemCount: meters.length,
       itemBuilder: (context, index) {
         final m = meters[index];
-        final String overallStatusName = (m.overallStatus?.name ?? 'pending') as String;
+        final overallStatusName = m.overallStatus.name;
         final isSuccess = overallStatusName == 'success';
         final isError = overallStatusName == 'failed';
 
         String typeStr = 'Isı';
-        String meterId = (m.heatMeterId ?? '') as String;
-        String valueStr = (m.getHeatIndexDisplay() ?? '-') as String;
+        String meterId = m.heatMeterId;
+        String valueStr = m.getHeatIndexDisplay();
         IconData typeIcon = Icons.local_fire_department;
         Color typeColor = Colors.orange;
 
-        final String heatId = (m.heatMeterId ?? '') as String;
-        final String waterId = (m.waterMeterId ?? '') as String;
-        if (heatId.isEmpty && waterId.isNotEmpty) {
+        if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
           typeStr = 'Su';
-          meterId = waterId;
-          valueStr = (m.getWaterIndexDisplay() ?? '-') as String;
+          meterId = m.waterMeterId;
+          valueStr = m.getWaterIndexDisplay();
           typeIcon = Icons.water_drop;
           typeColor = Colors.blue;
         }
@@ -360,7 +359,7 @@ class _MetersScreenState extends State<MetersScreen> {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
-              _buildGridRow('Blok/Daire', m.flatNo ?? '-', isDark),
+              _buildGridRow('Blok/Daire', m.flatNo, isDark),
               const SizedBox(height: 4),
               _buildGridRow('Son Okuma', valueStr, isDark, isValueBold: true),
             ],
@@ -393,7 +392,7 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-  Widget _buildListView(List<dynamic> meters, bool isDark) {
+  Widget _buildListView(List<MeterData> meters, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
@@ -415,28 +414,26 @@ class _MetersScreenState extends State<MetersScreen> {
             DataColumn(label: Text('Tarih', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
           ],
           rows: meters.map((m) {
-            final String overallStatusName = (m.overallStatus?.name ?? 'pending') as String;
+            final overallStatusName = m.overallStatus.name;
             final isSuccess = overallStatusName == 'success';
             final isError = overallStatusName == 'failed';
 
             String typeStr = 'Isı';
-            String meterId = (m.heatMeterId ?? '') as String;
-            String valueStr = (m.getHeatIndexDisplay() ?? '-') as String;
+            String meterId = m.heatMeterId;
+            String valueStr = m.getHeatIndexDisplay();
             IconData typeIcon = Icons.local_fire_department;
             Color typeColor = Colors.orange;
 
-            final String heatId = (m.heatMeterId ?? '') as String;
-            final String waterId = (m.waterMeterId ?? '') as String;
-            if (heatId.isEmpty && waterId.isNotEmpty) {
+            if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
               typeStr = 'Su';
-              meterId = waterId;
-              valueStr = (m.getWaterIndexDisplay() ?? '-') as String;
+              meterId = m.waterMeterId;
+              valueStr = m.getWaterIndexDisplay();
               typeIcon = Icons.water_drop;
               typeColor = Colors.blue;
             }
 
+            final readTime = m.readTime;
             String dateStr = '-';
-            final DateTime? readTime = m.readTime as DateTime?;
             if (readTime != null) {
               dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
             }
@@ -478,7 +475,7 @@ class _MetersScreenState extends State<MetersScreen> {
                     ],
                   ),
                 ),
-                DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
+                DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
                 DataCell(Text(valueStr, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.grey.shade900))),
                 DataCell(Text(dateStr, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500))),
               ],

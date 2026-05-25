@@ -1,0 +1,10 @@
+<<<<<<< SEARCH
+        ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        ChangeNotifierProvider(create: (_) => CloudProvider()),
+=======
+        ChangeNotifierProvider<AppDataProvider>(
+          create: (_) => kIsWeb ? CloudProvider() : DeviceProvider(),
+        ),
+        ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        ChangeNotifierProvider(create: (_) => CloudProvider()),
+>>>>>>> REPLACE

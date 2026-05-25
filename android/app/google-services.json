@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "470845816372",
+    "project_id": "sayacpro-1f4f3",
+    "storage_bucket": "sayacpro-1f4f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:470845816372:android:b682f3a4984c8f9aca1461",
+        "android_client_info": {
+          "package_name": "com.example.sayac_pro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2Fxz3R1EgL28beVN4NIpfcy5y4b4pGyA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

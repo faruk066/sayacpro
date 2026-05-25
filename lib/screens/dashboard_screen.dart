@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../models/meter_data.dart';
 import '../providers/app_data_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -563,7 +564,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentReadingsTable(BuildContext context, List<dynamic> meters) {
+  Widget _buildRecentReadingsTable(BuildContext context, List<MeterData> meters) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -643,35 +644,33 @@ class DashboardScreen extends StatelessWidget {
                 DataColumn(label: Text('Durum', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
               ],
               rows: recentMeters.map((m) {
-                final String overallStatusName = (m.overallStatus?.name ?? 'pending') as String;
+                final overallStatusName = m.overallStatus.name;
                 final isSuccess = overallStatusName == 'success';
 
                 // Determine representation based on what is available
                 String typeStr = 'Isı';
-                String meterId = (m.heatMeterId ?? '') as String;
-                String valueStr = (m.getHeatIndexDisplay() ?? '-') as String;
+                String meterId = m.heatMeterId;
+                String valueStr = m.getHeatIndexDisplay();
                 IconData typeIcon = Icons.local_fire_department;
                 Color typeColor = Colors.orange;
 
-                final String heatId = (m.heatMeterId ?? '') as String;
-                final String waterId = (m.waterMeterId ?? '') as String;
-                if (heatId.isEmpty && waterId.isNotEmpty) {
+                if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
                   typeStr = 'Su';
-                  meterId = waterId;
-                  valueStr = (m.getWaterIndexDisplay() ?? '-') as String;
+                  meterId = m.waterMeterId;
+                  valueStr = m.getWaterIndexDisplay();
                   typeIcon = Icons.water_drop;
                   typeColor = Colors.blue;
                 }
 
+                final readTime = m.readTime;
                 String dateStr = '-';
-                final DateTime? readTime = m.readTime as DateTime?;
                 if (readTime != null) {
                   dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
                 }
 
                 return DataRow(
                   cells: [
-                    DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
+                    DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
