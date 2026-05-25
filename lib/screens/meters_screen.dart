@@ -158,7 +158,28 @@ class _MetersScreenState extends State<MetersScreen> {
               ),
               const SizedBox(height: 24),
 
+              if (meters.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200, style: BorderStyle.solid, width: 2),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.speed_outlined, size: 48, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                      const SizedBox(height: 16),
+                      Text('Henüz sayaç yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.grey.shade900)),
+                      const SizedBox(height: 8),
+                      Text('Excel içe aktararak veya cihaz bağlayarak başlayın.', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500)),
+                    ],
+                  ),
+                ),
+
               // Content
+              if (meters.isNotEmpty)
               _viewMode == 'grid'
                   ? LayoutBuilder(
                       builder: (context, constraints) {
@@ -247,19 +268,19 @@ class _MetersScreenState extends State<MetersScreen> {
       itemCount: meters.length,
       itemBuilder: (context, index) {
         final m = meters[index];
-        final isSuccess = m.overallStatus.name == 'success';
-        final isError = m.overallStatus.name == 'failed';
+        final isSuccess = m.overallStatus?.name == 'success';
+        final isError = m.overallStatus?.name == 'failed';
 
         String typeStr = 'Isı';
-        String meterId = m.heatMeterId;
-        String valueStr = m.heatIndex;
+        String meterId = m.heatMeterId ?? '';
+        String valueStr = m.getHeatIndexDisplay() ?? '0';
         IconData typeIcon = Icons.local_fire_department;
         Color typeColor = Colors.orange;
 
-        if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
+        if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
           typeStr = 'Su';
           meterId = m.waterMeterId;
-          valueStr = m.waterIndex;
+          valueStr = m.getWaterIndexDisplay() ?? '0';
           typeIcon = Icons.water_drop;
           typeColor = Colors.blue;
         }
@@ -336,7 +357,7 @@ class _MetersScreenState extends State<MetersScreen> {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
-              _buildGridRow('Blok/Daire', m.flatNo, isDark),
+              _buildGridRow('Blok/Daire', m.flatNo ?? '-', isDark),
               const SizedBox(height: 4),
               _buildGridRow('Son Okuma', valueStr, isDark, isValueBold: true),
             ],
@@ -391,19 +412,19 @@ class _MetersScreenState extends State<MetersScreen> {
             DataColumn(label: Text('Tarih', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
           ],
           rows: meters.map((m) {
-            final isSuccess = m.overallStatus.name == 'success';
-            final isError = m.overallStatus.name == 'failed';
+            final isSuccess = m.overallStatus?.name == 'success';
+            final isError = m.overallStatus?.name == 'failed';
 
             String typeStr = 'Isı';
-            String meterId = m.heatMeterId;
-            String valueStr = m.heatIndex;
+            String meterId = m.heatMeterId ?? '';
+            String valueStr = m.getHeatIndexDisplay() ?? '0';
             IconData typeIcon = Icons.local_fire_department;
             Color typeColor = Colors.orange;
 
-            if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
+            if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
               typeStr = 'Su';
               meterId = m.waterMeterId;
-              valueStr = m.waterIndex;
+              valueStr = m.getWaterIndexDisplay() ?? '0';
               typeIcon = Icons.water_drop;
               typeColor = Colors.blue;
             }
@@ -451,7 +472,7 @@ class _MetersScreenState extends State<MetersScreen> {
                     ],
                   ),
                 ),
-                DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
+                DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
                 DataCell(Text(valueStr, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.grey.shade900))),
                 DataCell(Text(dateStr, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500))),
               ],
