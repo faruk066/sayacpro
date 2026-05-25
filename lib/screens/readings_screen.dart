@@ -144,22 +144,31 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
                       ),
                     ],
                   ),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      _buildActionButton(
-                        isDark,
-                        Icons.cloud_upload_outlined,
-                        'Senkronize',
-                        Colors.green,
-                        () {},
+                      SizedBox(
+                        width: 130,
+                        child: _buildActionButton(
+                          isDark,
+                          Icons.cloud_upload_outlined,
+                          'Senkronize',
+                          Colors.green,
+                          () {},
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      _buildActionButton(
-                        isDark,
-                        Icons.download_outlined,
-                        'Dışa Aktar',
-                        const Color(0xFF8B5CF6),
-                        () {},
+                      SizedBox(
+                        width: 130,
+                        child: _buildActionButton(
+                          isDark,
+                          Icons.download_outlined,
+                          'Dışa Aktar',
+                          const Color(0xFF8B5CF6),
+                          () {},
+                        ),
                       ),
                     ],
                   ),

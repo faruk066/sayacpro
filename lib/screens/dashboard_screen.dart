@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-<<<<<<< HEAD
 import '../models/meter_data.dart';
-=======
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
 import '../providers/app_data_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -20,11 +17,19 @@ class DashboardScreen extends StatelessWidget {
         final meters = provider.meterList;
 
         int totalMeters = meters.length;
-        int heatMeters = meters.where((m) => m.type.name == 'heat' || m.heatMeterId.isNotEmpty).length;
-        int waterMeters = meters.where((m) => m.type.name == 'water' || m.waterMeterId.isNotEmpty).length;
-        int errorMeters = meters.where((m) => m.overallStatus.name == 'failed').length;
+        int heatMeters = meters
+            .where((m) => m.type.name == 'heat' || m.heatMeterId.isNotEmpty)
+            .length;
+        int waterMeters = meters
+            .where((m) => m.type.name == 'water' || m.waterMeterId.isNotEmpty)
+            .length;
+        int errorMeters = meters
+            .where((m) => m.overallStatus.name == 'failed')
+            .length;
 
-        int syncedReadings = meters.where((m) => m.overallStatus.name == 'success').length;
+        int syncedReadings = meters
+            .where((m) => m.overallStatus.name == 'success')
+            .length;
         int pendingReadings = totalMeters - syncedReadings - errorMeters;
         if (pendingReadings < 0) pendingReadings = 0;
         int todayReadings = syncedReadings;
@@ -53,28 +58,45 @@ class DashboardScreen extends StatelessWidget {
                         'Sistem durumu ve okuma özetleri',
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
                         ),
                       ),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : Colors.grey.shade200,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                        Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Son 30 Gün',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade700,
                           ),
                         ),
                       ],
@@ -89,104 +111,199 @@ class DashboardScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 48),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey.shade50,
+                    color: isDark
+                        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                        : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200, style: BorderStyle.solid, width: 2),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : Colors.grey.shade200,
+                      style: BorderStyle.solid,
+                      width: 2,
+                    ),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.analytics_outlined, size: 48, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                      Icon(
+                        Icons.analytics_outlined,
+                        size: 48,
+                        color: isDark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
-                      Text('Henüz veri yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.grey.shade900)),
+                      Text(
+                        'Henüz veri yok',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.grey.shade900,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Excel içe aktararak veya cihaz bağlayarak başlayın.', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500)),
+                      Text(
+                        'Excel içe aktararak veya cihaz bağlayarak başlayın.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
               if (meters.isNotEmpty)
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  int crossAxisCount = 4;
-                  if (width < 600) {
-                    crossAxisCount = 1;
-                  } else if (width < 900) {
-                    crossAxisCount = 2;
-                  }
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    int crossAxisCount = 4;
+                    if (width < 600) {
+                      crossAxisCount = 1;
+                    } else if (width < 900) {
+                      crossAxisCount = 2;
+                    }
 
-                  return Column(
-                    children: [
-                      // Overview Cards
-                      GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: width < 600 ? 2.5 : 1.5,
-                        children: [
-                          _buildStatCard(context, 'Toplam Sayaç', totalMeters.toString(), Icons.speed, Colors.purple, '+12', true),
-                          _buildStatCard(context, 'Isı Sayacı', heatMeters.toString(), Icons.local_fire_department, Colors.orange, '+5', true),
-                          _buildStatCard(context, 'Su Sayacı', waterMeters.toString(), Icons.water_drop, Colors.blue, '+7', true),
-                          _buildStatCard(context, 'Hatalı', errorMeters.toString(), Icons.warning_amber_rounded, Colors.red, '-2', false),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Charts Row
-                      if (width < 900) ...[
-                        _buildBarChartCard(context),
-                        const SizedBox(height: 16),
-                        _buildPieChartCard(context, syncedReadings, pendingReadings, errorMeters),
-                        const SizedBox(height: 16),
-                        _buildLineChartCard(context),
-                      ] else ...[
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    return Column(
+                      children: [
+                        // Overview Cards
+                        GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: width < 600 ? 2.5 : 1.5,
                           children: [
-                            Expanded(
-                              flex: 5,
-                              child: _buildBarChartCard(context),
+                            _buildStatCard(
+                              context,
+                              'Toplam Sayaç',
+                              totalMeters.toString(),
+                              Icons.speed,
+                              Colors.purple,
+                              '+12',
+                              true,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 3,
-                              child: _buildPieChartCard(context, syncedReadings, pendingReadings, errorMeters),
+                            _buildStatCard(
+                              context,
+                              'Isı Sayacı',
+                              heatMeters.toString(),
+                              Icons.local_fire_department,
+                              Colors.orange,
+                              '+5',
+                              true,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 4,
-                              child: _buildLineChartCard(context),
+                            _buildStatCard(
+                              context,
+                              'Su Sayacı',
+                              waterMeters.toString(),
+                              Icons.water_drop,
+                              Colors.blue,
+                              '+7',
+                              true,
+                            ),
+                            _buildStatCard(
+                              context,
+                              'Hatalı',
+                              errorMeters.toString(),
+                              Icons.warning_amber_rounded,
+                              Colors.red,
+                              '-2',
+                              false,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Charts Row
+                        if (width < 900) ...[
+                          _buildBarChartCard(context),
+                          const SizedBox(height: 16),
+                          _buildPieChartCard(
+                            context,
+                            syncedReadings,
+                            pendingReadings,
+                            errorMeters,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildLineChartCard(context),
+                        ] else ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: _buildBarChartCard(context),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                flex: 3,
+                                child: _buildPieChartCard(
+                                  context,
+                                  syncedReadings,
+                                  pendingReadings,
+                                  errorMeters,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                flex: 4,
+                                child: _buildLineChartCard(context),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+
+                        // Recent Readings Table
+                        _buildRecentReadingsTable(context, meters),
+                        const SizedBox(height: 24),
+
+                        // Quick Stats Bar
+                        GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: width < 600 ? 3.5 : 2.5,
+                          children: [
+                            _buildQuickStat(
+                              context,
+                              syncedReadings.toString(),
+                              'Senkronize',
+                              Icons.check_circle,
+                              Colors.green,
+                            ),
+                            _buildQuickStat(
+                              context,
+                              pendingReadings.toString(),
+                              'Bekleyen',
+                              Icons.access_time,
+                              Colors.orange,
+                            ),
+                            _buildQuickStat(
+                              context,
+                              errorMeters.toString(),
+                              'Hatalı',
+                              Icons.error_outline,
+                              Colors.red,
+                            ),
+                            _buildQuickStat(
+                              context,
+                              todayReadings.toString(),
+                              'Bugün',
+                              Icons.show_chart,
+                              Colors.purple,
                             ),
                           ],
                         ),
                       ],
-                      const SizedBox(height: 24),
-
-                      // Recent Readings Table
-                      _buildRecentReadingsTable(context, meters),
-                      const SizedBox(height: 24),
-
-                      // Quick Stats Bar
-                      GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: width < 600 ? 3.5 : 2.5,
-                        children: [
-                          _buildQuickStat(context, syncedReadings.toString(), 'Senkronize', Icons.check_circle, Colors.green),
-                          _buildQuickStat(context, pendingReadings.toString(), 'Bekleyen', Icons.access_time, Colors.orange),
-                          _buildQuickStat(context, errorMeters.toString(), 'Hatalı', Icons.error_outline, Colors.red),
-                          _buildQuickStat(context, todayReadings.toString(), 'Bugün', Icons.show_chart, Colors.purple),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
             ],
           ),
         );
@@ -194,7 +311,15 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color, String trend, bool isPositive) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    String trend,
+    bool isPositive,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -203,7 +328,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +349,9 @@ class DashboardScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                  color: (isPositive ? Colors.green : Colors.red).withValues(
+                    alpha: 0.1,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -277,7 +406,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,13 +446,27 @@ class DashboardScreen extends StatelessWidget {
                         const style = TextStyle(fontSize: 10);
                         Widget text;
                         switch (value.toInt()) {
-                          case 0: text = const Text('Oca', style: style); break;
-                          case 1: text = const Text('Şub', style: style); break;
-                          case 2: text = const Text('Mar', style: style); break;
-                          case 3: text = const Text('Nis', style: style); break;
-                          case 4: text = const Text('May', style: style); break;
-                          case 5: text = const Text('Haz', style: style); break;
-                          default: text = const Text('', style: style); break;
+                          case 0:
+                            text = const Text('Oca', style: style);
+                            break;
+                          case 1:
+                            text = const Text('Şub', style: style);
+                            break;
+                          case 2:
+                            text = const Text('Mar', style: style);
+                            break;
+                          case 3:
+                            text = const Text('Nis', style: style);
+                            break;
+                          case 4:
+                            text = const Text('May', style: style);
+                            break;
+                          case 5:
+                            text = const Text('Haz', style: style);
+                            break;
+                          default:
+                            text = const Text('', style: style);
+                            break;
                         }
                         return SideTitleWidget(meta: meta, child: text);
                       },
@@ -330,8 +475,12 @@ class DashboardScreen extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: [
@@ -370,7 +519,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPieChartCard(BuildContext context, int synced, int pending, int error) {
+  Widget _buildPieChartCard(
+    BuildContext context,
+    int synced,
+    int pending,
+    int error,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -382,7 +536,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,26 +593,38 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildPieLegendItem('Senkronize', synced.toString(), Colors.green, isDark),
-              _buildPieLegendItem('Bekliyor', pending.toString(), Colors.orange, isDark),
+              _buildPieLegendItem(
+                'Senkronize',
+                synced.toString(),
+                Colors.green,
+                isDark,
+              ),
+              _buildPieLegendItem(
+                'Bekliyor',
+                pending.toString(),
+                Colors.orange,
+                isDark,
+              ),
               _buildPieLegendItem('Hata', error.toString(), Colors.red, isDark),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPieLegendItem(String label, String value, Color color, bool isDark) {
+  Widget _buildPieLegendItem(
+    String label,
+    String value,
+    Color color,
+    bool isDark,
+  ) {
     return Row(
       children: [
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(
@@ -479,7 +647,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,14 +686,30 @@ class DashboardScreen extends StatelessWidget {
                         const style = TextStyle(fontSize: 10);
                         Widget text;
                         switch (value.toInt()) {
-                          case 0: text = const Text('Pzt', style: style); break;
-                          case 1: text = const Text('Sal', style: style); break;
-                          case 2: text = const Text('Çar', style: style); break;
-                          case 3: text = const Text('Per', style: style); break;
-                          case 4: text = const Text('Cum', style: style); break;
-                          case 5: text = const Text('Cmt', style: style); break;
-                          case 6: text = const Text('Paz', style: style); break;
-                          default: text = const Text('', style: style); break;
+                          case 0:
+                            text = const Text('Pzt', style: style);
+                            break;
+                          case 1:
+                            text = const Text('Sal', style: style);
+                            break;
+                          case 2:
+                            text = const Text('Çar', style: style);
+                            break;
+                          case 3:
+                            text = const Text('Per', style: style);
+                            break;
+                          case 4:
+                            text = const Text('Cum', style: style);
+                            break;
+                          case 5:
+                            text = const Text('Cmt', style: style);
+                            break;
+                          case 6:
+                            text = const Text('Paz', style: style);
+                            break;
+                          default:
+                            text = const Text('', style: style);
+                            break;
                         }
                         return SideTitleWidget(meta: meta, child: text);
                       },
@@ -532,8 +718,12 @@ class DashboardScreen extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 minX: 0,
@@ -567,11 +757,10 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-<<<<<<< HEAD
-  Widget _buildRecentReadingsTable(BuildContext context, List<MeterData> meters) {
-=======
-  Widget _buildRecentReadingsTable(BuildContext context, List<dynamic> meters) {
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
+  Widget _buildRecentReadingsTable(
+    BuildContext context,
+    List<MeterData> meters,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -582,7 +771,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         children: [
@@ -607,27 +798,38 @@ class DashboardScreen extends StatelessWidget {
                       'En son yapılan sayaç okumaları',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade500,
                       ),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.show_chart, size: 14, color: Colors.green),
+                      const Icon(
+                        Icons.show_chart,
+                        size: 14,
+                        color: Colors.green,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Canlı',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.green.shade400 : Colors.green.shade600,
+                          color: isDark
+                              ? Colors.green.shade400
+                              : Colors.green.shade600,
                         ),
                       ),
                     ],
@@ -643,15 +845,68 @@ class DashboardScreen extends StatelessWidget {
                 isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
               ),
               columns: [
-                DataColumn(label: Text('Daire', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-                DataColumn(label: Text('Tip', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-                DataColumn(label: Text('Sayaç No', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-                DataColumn(label: Text('Değer', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-                DataColumn(label: Text('Tarih', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-                DataColumn(label: Text('Durum', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
+                DataColumn(
+                  label: Text(
+                    'Daire',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Tip',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Sayaç No',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Değer',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Tarih',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+                DataColumn(
+                  label: Text(
+                    'Durum',
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ),
               ],
               rows: recentMeters.map((m) {
-<<<<<<< HEAD
                 final overallStatusName = m.overallStatus.name;
                 final isSuccess = overallStatusName == 'success';
 
@@ -666,48 +921,34 @@ class DashboardScreen extends StatelessWidget {
                   typeStr = 'Su';
                   meterId = m.waterMeterId;
                   valueStr = m.getWaterIndexDisplay();
-=======
-                final isSuccess = m.overallStatus?.name == 'success';
-
-                // Determine representation based on what is available
-                String typeStr = 'Isı';
-                String meterId = m.heatMeterId ?? '';
-                String valueStr = m.getHeatIndexDisplay() ?? '0';
-                IconData typeIcon = Icons.local_fire_department;
-                Color typeColor = Colors.orange;
-
-                if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
-                  typeStr = 'Su';
-                  meterId = m.waterMeterId;
-                  valueStr = m.getWaterIndexDisplay() ?? '0';
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
                   typeIcon = Icons.water_drop;
                   typeColor = Colors.blue;
                 }
 
-<<<<<<< HEAD
                 final readTime = m.readTime;
                 String dateStr = '-';
                 if (readTime != null) {
-                  dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
-=======
-                String dateStr = '-';
-                if (m.readTime != null) {
-                  final dt = m.readTime;
-                  dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
+                  dateStr =
+                      '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
                 }
 
                 return DataRow(
                   cells: [
-<<<<<<< HEAD
-                    DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
-=======
-                    DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
+                    DataCell(
+                      Text(
+                        m.flatNo,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.grey.shade900,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                     DataCell(
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: typeColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -717,14 +958,48 @@ class DashboardScreen extends StatelessWidget {
                           children: [
                             Icon(typeIcon, size: 12, color: typeColor),
                             const SizedBox(width: 4),
-                            Text(typeStr, style: TextStyle(fontSize: 12, color: typeColor, fontWeight: FontWeight.w500)),
+                            Text(
+                              typeStr,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: typeColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                    DataCell(Text(meterId, style: TextStyle(fontFamily: 'monospace', color: isDark ? Colors.grey.shade300 : Colors.grey.shade600))),
-                    DataCell(Text(valueStr, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.grey.shade900))),
-                    DataCell(Text(dateStr, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500))),
+                    DataCell(
+                      Text(
+                        meterId,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          color: isDark
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        valueStr,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.grey.shade900,
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        dateStr,
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
                     DataCell(
                       Row(
                         children: [
@@ -742,7 +1017,7 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                         ],
-                      )
+                      ),
                     ),
                   ],
                 );
@@ -754,7 +1029,13 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStat(BuildContext context, String value, String label, IconData icon, Color color) {
+  Widget _buildQuickStat(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -763,7 +1044,9 @@ class DashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: Row(
         children: [

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-<<<<<<< HEAD
 import '../models/meter_data.dart';
-=======
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
 import '../providers/app_data_provider.dart';
 
 class MetersScreen extends StatefulWidget {
@@ -38,7 +35,8 @@ class _MetersScreenState extends State<MetersScreen> {
           final isError = m.overallStatus.name == 'failed';
           if (_filterStatus == 'active' && !isSuccess) return false;
           if (_filterStatus == 'error' && !isError) return false;
-          if (_filterStatus == 'pending' && (isSuccess || isError)) return false;
+          if (_filterStatus == 'pending' && (isSuccess || isError))
+            return false;
 
           return true;
         }).toList();
@@ -52,48 +50,96 @@ class _MetersScreenState extends State<MetersScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sayaç Yönetimi',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sayaç Yönetimi',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.grey.shade900,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Tüm sayaçlarınızı görüntüleyin ve yönetin',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        Text(
+                          'Tüm sayaçlarınızı görüntüleyin ve yönetin',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : Colors.grey.shade200,
+                          ),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.grid_view, color: _viewMode == 'grid' ? const Color(0xFF8B5CF6) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600), size: 20),
-                              onPressed: () => setState(() => _viewMode = 'grid'),
+                              icon: Icon(
+                                Icons.grid_view,
+                                color: _viewMode == 'grid'
+                                    ? const Color(0xFF8B5CF6)
+                                    : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600),
+                                size: 20,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _viewMode = 'grid'),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.list, color: _viewMode == 'list' ? const Color(0xFF8B5CF6) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600), size: 20),
-                              onPressed: () => setState(() => _viewMode = 'list'),
+                              icon: Icon(
+                                Icons.list,
+                                color: _viewMode == 'list'
+                                    ? const Color(0xFF8B5CF6)
+                                    : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600),
+                                size: 20,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _viewMode = 'list'),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
                       ElevatedButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.refresh, size: 18),
@@ -101,8 +147,13 @@ class _MetersScreenState extends State<MetersScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B5CF6),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -120,19 +171,42 @@ class _MetersScreenState extends State<MetersScreen> {
                       children: [
                         Row(
                           children: [
-                            Expanded(child: _buildDropdown(isDark, 'Tip Seçimi', ['all', 'heat', 'water'], ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'], _filterType, (val) => setState(() => _filterType = val!))),
+                            Expanded(
+                              child: _buildDropdown(
+                                isDark,
+                                'Tip Seçimi',
+                                ['all', 'heat', 'water'],
+                                ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'],
+                                _filterType,
+                                (val) => setState(() => _filterType = val!),
+                              ),
+                            ),
                             const SizedBox(width: 12),
-                            Expanded(child: _buildDropdown(isDark, 'Durum', ['all', 'active', 'pending', 'error'], ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'], _filterStatus, (val) => setState(() => _filterStatus = val!))),
+                            Expanded(
+                              child: _buildDropdown(
+                                isDark,
+                                'Durum',
+                                ['all', 'active', 'pending', 'error'],
+                                [
+                                  'Tüm Durumlar',
+                                  'Aktif/Başarılı',
+                                  'Beklemede',
+                                  'Hata',
+                                ],
+                                _filterStatus,
+                                (val) => setState(() => _filterStatus = val!),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
                           children: [
                             _buildQuickTag('all', 'Tümü', isDark),
-                            const SizedBox(width: 8),
                             _buildQuickTag('heat', 'Isı', isDark),
-                            const SizedBox(width: 8),
                             _buildQuickTag('water', 'Su', isDark),
                           ],
                         ),
@@ -140,22 +214,31 @@ class _MetersScreenState extends State<MetersScreen> {
                     );
                   }
 
-                  return Row(
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      _buildDropdown(isDark, 'Tip Seçimi', ['all', 'heat', 'water'], ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'], _filterType, (val) => setState(() => _filterType = val!)),
-                      const SizedBox(width: 12),
-                      _buildDropdown(isDark, 'Durum', ['all', 'active', 'pending', 'error'], ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'], _filterStatus, (val) => setState(() => _filterStatus = val!)),
-                      const Spacer(),
-                      // Quick tags
-                      Row(
-                        children: [
-                          _buildQuickTag('all', 'Tümü', isDark),
-                          const SizedBox(width: 8),
-                          _buildQuickTag('heat', 'Isı', isDark),
-                          const SizedBox(width: 8),
-                          _buildQuickTag('water', 'Su', isDark),
-                        ],
-                      )
+                      _buildDropdown(
+                        isDark,
+                        'Tip Seçimi',
+                        ['all', 'heat', 'water'],
+                        ['Tüm Tipler', 'Isı Sayacı', 'Su Sayacı'],
+                        _filterType,
+                        (val) => setState(() => _filterType = val!),
+                      ),
+                      _buildDropdown(
+                        isDark,
+                        'Durum',
+                        ['all', 'active', 'pending', 'error'],
+                        ['Tüm Durumlar', 'Aktif/Başarılı', 'Beklemede', 'Hata'],
+                        _filterStatus,
+                        (val) => setState(() => _filterStatus = val!),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildQuickTag('all', 'Tümü', isDark),
+                      _buildQuickTag('heat', 'Isı', isDark),
+                      _buildQuickTag('water', 'Su', isDark),
                     ],
                   );
                 },
@@ -167,38 +250,71 @@ class _MetersScreenState extends State<MetersScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 48),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey.shade50,
+                    color: isDark
+                        ? const Color(0xFF1E293B).withValues(alpha: 0.5)
+                        : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200, style: BorderStyle.solid, width: 2),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : Colors.grey.shade200,
+                      style: BorderStyle.solid,
+                      width: 2,
+                    ),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.speed_outlined, size: 48, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                      Icon(
+                        Icons.speed_outlined,
+                        size: 48,
+                        color: isDark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
-                      Text('Henüz sayaç yok', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.grey.shade900)),
+                      Text(
+                        'Henüz sayaç yok',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.grey.shade900,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text('Excel içe aktararak veya cihaz bağlayarak başlayın.', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500)),
+                      Text(
+                        'Excel içe aktararak veya cihaz bağlayarak başlayın.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
               // Content
               if (meters.isNotEmpty)
-              _viewMode == 'grid'
-                  ? LayoutBuilder(
-                      builder: (context, constraints) {
-                        int crossAxisCount = 4;
-                        if (constraints.maxWidth < 600) {
-                          crossAxisCount = 1;
-                        } else if (constraints.maxWidth < 900) {
-                          crossAxisCount = 2;
-                        } else if (constraints.maxWidth < 1200) {
-                          crossAxisCount = 3;
-                        }
-                        return _buildGridView(filteredMeters, isDark, crossAxisCount);
-                      },
-                    )
-                  : _buildListView(filteredMeters, isDark),
+                _viewMode == 'grid'
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          int crossAxisCount = 4;
+                          if (constraints.maxWidth < 600) {
+                            crossAxisCount = 1;
+                          } else if (constraints.maxWidth < 900) {
+                            crossAxisCount = 2;
+                          } else if (constraints.maxWidth < 1200) {
+                            crossAxisCount = 3;
+                          }
+                          return _buildGridView(
+                            filteredMeters,
+                            isDark,
+                            crossAxisCount,
+                          );
+                        },
+                      )
+                    : _buildListView(filteredMeters, isDark),
             ],
           ),
         );
@@ -206,19 +322,32 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-  Widget _buildDropdown(bool isDark, String hint, List<String> values, List<String> labels, String currentValue, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(
+    bool isDark,
+    String hint,
+    List<String> values,
+    List<String> labels,
+    String currentValue,
+    ValueChanged<String?> onChanged,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       height: 40,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: currentValue,
-          icon: Icon(Icons.keyboard_arrow_down, size: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            size: 16,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
           dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           style: TextStyle(
             fontSize: 14,
@@ -244,7 +373,9 @@ class _MetersScreenState extends State<MetersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF8B5CF6) : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
+          color: isActive
+              ? const Color(0xFF8B5CF6)
+              : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -252,18 +383,20 @@ class _MetersScreenState extends State<MetersScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: isActive ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+            color: isActive
+                ? Colors.white
+                : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
           ),
         ),
       ),
     );
   }
 
-<<<<<<< HEAD
-  Widget _buildGridView(List<MeterData> meters, bool isDark, int crossAxisCount) {
-=======
-  Widget _buildGridView(List<dynamic> meters, bool isDark, int crossAxisCount) {
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
+  Widget _buildGridView(
+    List<MeterData> meters,
+    bool isDark,
+    int crossAxisCount,
+  ) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -276,7 +409,6 @@ class _MetersScreenState extends State<MetersScreen> {
       itemCount: meters.length,
       itemBuilder: (context, index) {
         final m = meters[index];
-<<<<<<< HEAD
         final overallStatusName = m.overallStatus.name;
         final isSuccess = overallStatusName == 'success';
         final isError = overallStatusName == 'failed';
@@ -291,21 +423,6 @@ class _MetersScreenState extends State<MetersScreen> {
           typeStr = 'Su';
           meterId = m.waterMeterId;
           valueStr = m.getWaterIndexDisplay();
-=======
-        final isSuccess = m.overallStatus?.name == 'success';
-        final isError = m.overallStatus?.name == 'failed';
-
-        String typeStr = 'Isı';
-        String meterId = m.heatMeterId ?? '';
-        String valueStr = m.getHeatIndexDisplay() ?? '0';
-        IconData typeIcon = Icons.local_fire_department;
-        Color typeColor = Colors.orange;
-
-        if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
-          typeStr = 'Su';
-          meterId = m.waterMeterId;
-          valueStr = m.getWaterIndexDisplay() ?? '0';
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
           typeIcon = Icons.water_drop;
           typeColor = Colors.blue;
         }
@@ -315,7 +432,9 @@ class _MetersScreenState extends State<MetersScreen> {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF0B1120) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,14 +461,18 @@ class _MetersScreenState extends State<MetersScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : Colors.grey.shade900,
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.grey.shade900,
                             ),
                           ),
                           Text(
                             typeStr,
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade500,
                             ),
                           ),
                         ],
@@ -357,21 +480,41 @@ class _MetersScreenState extends State<MetersScreen> {
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSuccess ? Colors.green.withValues(alpha: 0.1) : (isError ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1)),
+                      color: isSuccess
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : (isError
+                                ? Colors.red.withValues(alpha: 0.1)
+                                : Colors.orange.withValues(alpha: 0.1)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(isSuccess ? Icons.wifi : (isError ? Icons.warning : Icons.access_time), size: 12, color: isSuccess ? Colors.green : (isError ? Colors.red : Colors.orange)),
+                        Icon(
+                          isSuccess
+                              ? Icons.wifi
+                              : (isError ? Icons.warning : Icons.access_time),
+                          size: 12,
+                          color: isSuccess
+                              ? Colors.green
+                              : (isError ? Colors.red : Colors.orange),
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          isSuccess ? 'Aktif' : (isError ? 'Hata' : 'Beklemede'),
+                          isSuccess
+                              ? 'Aktif'
+                              : (isError ? 'Hata' : 'Beklemede'),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isSuccess ? Colors.green : (isError ? Colors.red : Colors.orange),
+                            color: isSuccess
+                                ? Colors.green
+                                : (isError ? Colors.red : Colors.orange),
                           ),
                         ),
                       ],
@@ -382,11 +525,7 @@ class _MetersScreenState extends State<MetersScreen> {
               const Spacer(),
               const Divider(),
               const SizedBox(height: 8),
-<<<<<<< HEAD
               _buildGridRow('Blok/Daire', m.flatNo, isDark),
-=======
-              _buildGridRow('Blok/Daire', m.flatNo ?? '-', isDark),
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
               const SizedBox(height: 4),
               _buildGridRow('Son Okuma', valueStr, isDark, isValueBold: true),
             ],
@@ -396,7 +535,12 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-  Widget _buildGridRow(String label, String value, bool isDark, {bool isValueBold = false}) {
+  Widget _buildGridRow(
+    String label,
+    String value,
+    bool isDark, {
+    bool isValueBold = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -419,126 +563,190 @@ class _MetersScreenState extends State<MetersScreen> {
     );
   }
 
-<<<<<<< HEAD
   Widget _buildListView(List<MeterData> meters, bool isDark) {
-=======
-  Widget _buildListView(List<dynamic> meters, bool isDark) {
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B1120) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(
-            isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
-          ),
-          columns: [
-            DataColumn(label: Text('Durum', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-            DataColumn(label: Text('Sayaç No', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-            DataColumn(label: Text('Tip', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-            DataColumn(label: Text('Daire', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-            DataColumn(label: Text('Son Okuma', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-            DataColumn(label: Text('Tarih', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600))),
-          ],
-          rows: meters.map((m) {
-<<<<<<< HEAD
-            final overallStatusName = m.overallStatus.name;
-            final isSuccess = overallStatusName == 'success';
-            final isError = overallStatusName == 'failed';
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 800),
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(
+              isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
+            ),
+            columnSpacing: 24,
+            columns: const [
+              DataColumn(
+                label: Text(
+                  'Durum',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Sayaç No',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Tip',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Daire',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Son Okuma',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Tarih',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+            rows: meters.map((m) {
+              final overallStatusName = m.overallStatus.name;
+              final isSuccess = overallStatusName == 'success';
+              final isError = overallStatusName == 'failed';
 
-            String typeStr = 'Isı';
-            String meterId = m.heatMeterId;
-            String valueStr = m.getHeatIndexDisplay();
-            IconData typeIcon = Icons.local_fire_department;
-            Color typeColor = Colors.orange;
+              String typeStr = 'Isı';
+              String meterId = m.heatMeterId;
+              String valueStr = m.getHeatIndexDisplay();
+              IconData typeIcon = Icons.local_fire_department;
+              Color typeColor = Colors.orange;
 
-            if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
-              typeStr = 'Su';
-              meterId = m.waterMeterId;
-              valueStr = m.getWaterIndexDisplay();
-=======
-            final isSuccess = m.overallStatus?.name == 'success';
-            final isError = m.overallStatus?.name == 'failed';
+              if (m.heatMeterId.isEmpty && m.waterMeterId.isNotEmpty) {
+                typeStr = 'Su';
+                meterId = m.waterMeterId;
+                valueStr = m.getWaterIndexDisplay();
+                typeIcon = Icons.water_drop;
+                typeColor = Colors.blue;
+              }
 
-            String typeStr = 'Isı';
-            String meterId = m.heatMeterId ?? '';
-            String valueStr = m.getHeatIndexDisplay() ?? '0';
-            IconData typeIcon = Icons.local_fire_department;
-            Color typeColor = Colors.orange;
+              final readTime = m.readTime;
+              String dateStr = '-';
+              if (readTime != null) {
+                dateStr =
+                    '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
+              }
 
-            if ((m.heatMeterId == null || m.heatMeterId.isEmpty) && (m.waterMeterId != null && m.waterMeterId.isNotEmpty)) {
-              typeStr = 'Su';
-              meterId = m.waterMeterId;
-              valueStr = m.getWaterIndexDisplay() ?? '0';
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
-              typeIcon = Icons.water_drop;
-              typeColor = Colors.blue;
-            }
-
-<<<<<<< HEAD
-            final readTime = m.readTime;
-            String dateStr = '-';
-            if (readTime != null) {
-              dateStr = '${readTime.day.toString().padLeft(2, '0')}.${readTime.month.toString().padLeft(2, '0')} ${readTime.hour.toString().padLeft(2, '0')}:${readTime.minute.toString().padLeft(2, '0')}';
-=======
-            String dateStr = '-';
-            if (m.readTime != null) {
-              final dt = m.readTime;
-              dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
-            }
-
-            return DataRow(
-              cells: [
-                DataCell(
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSuccess ? Colors.green.withValues(alpha: 0.1) : (isError ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1)),
-                      borderRadius: BorderRadius.circular(20),
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSuccess
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : (isError
+                                  ? Colors.red.withValues(alpha: 0.1)
+                                  : Colors.orange.withValues(alpha: 0.1)),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSuccess
+                                ? Icons.wifi
+                                : (isError ? Icons.warning : Icons.access_time),
+                            size: 12,
+                            color: isSuccess
+                                ? Colors.green
+                                : (isError ? Colors.red : Colors.orange),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isSuccess
+                                ? 'Aktif'
+                                : (isError ? 'Hata' : 'Beklemede'),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: isSuccess
+                                  ? Colors.green
+                                  : (isError ? Colors.red : Colors.orange),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
+                  ),
+                  DataCell(
+                    Text(
+                      meterId.isEmpty ? 'Bilinmiyor' : meterId,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        color: isDark ? Colors.white : Colors.grey.shade900,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(isSuccess ? Icons.wifi : (isError ? Icons.warning : Icons.access_time), size: 12, color: isSuccess ? Colors.green : (isError ? Colors.red : Colors.orange)),
+                        Icon(typeIcon, size: 16, color: typeColor),
                         const SizedBox(width: 4),
                         Text(
-                          isSuccess ? 'Aktif' : (isError ? 'Hata' : 'Beklemede'),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isSuccess ? Colors.green : (isError ? Colors.red : Colors.orange),
-                          ),
+                          typeStr,
+                          style: TextStyle(fontSize: 14, color: typeColor),
                         ),
                       ],
                     ),
                   ),
-                ),
-                DataCell(Text(meterId.isEmpty ? 'Bilinmiyor' : meterId, style: TextStyle(fontFamily: 'monospace', color: isDark ? Colors.white : Colors.grey.shade900, fontWeight: FontWeight.w500))),
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(typeIcon, size: 16, color: typeColor),
-                      const SizedBox(width: 4),
-                      Text(typeStr, style: TextStyle(fontSize: 14, color: typeColor)),
-                    ],
+                  DataCell(
+                    Text(
+                      m.flatNo,
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-<<<<<<< HEAD
-                DataCell(Text(m.flatNo, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
-=======
-                DataCell(Text(m.flatNo ?? '-', style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, fontWeight: FontWeight.w500))),
->>>>>>> 5d227a01b51cbb87b4b18d759290604f804fc4b5
-                DataCell(Text(valueStr, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.grey.shade900))),
-                DataCell(Text(dateStr, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500))),
-              ],
-            );
-          }).toList(),
+                  DataCell(
+                    Text(
+                      valueStr,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.grey.shade900,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/device_provider.dart';
 
 enum _SettingSection { general, connection, data, security }
 
@@ -300,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: cols == 1 ? 3 : 1.5,
+                  childAspectRatio: 1.6,
                   children: [
                     _buildThemeOption(
                       isDark: isDark,
@@ -467,98 +468,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ─── CONNECTION ───────────────────────────────────────────────
 
   Widget _buildConnectionSection(bool isDark) {
-    return Column(
-      children: [
-        // M-Bus Config
-        _buildSectionCard(
-          isDark: isDark,
-          title: 'M-Bus Bağlantısı',
-          icon: Icons.wifi,
+    return Consumer<DeviceProvider>(
+      builder: (context, deviceProvider, _) {
+        final isDeviceConnected = deviceProvider.isConnected;
+        final portName = deviceProvider.selectedDevice != null
+            ? (deviceProvider.selectedDevice?.productName ??
+                  deviceProvider.selectedDevice?.deviceName ??
+                  'USB')
+            : 'Bağlı Değil';
+
+        return Column(
           children: [
-            _buildDropdownSelect(
+            // M-Bus Config
+            _buildSectionCard(
               isDark: isDark,
-              value: _mbusBaudRate,
-              items: const [
-                DropdownMenuItem(
-                  value: '2400',
-                  child: Text('2400 (Varsayılan)'),
+              title: 'M-Bus Bağlantısı',
+              icon: Icons.wifi,
+              children: [
+                _buildDropdownSelect(
+                  isDark: isDark,
+                  value: _mbusBaudRate,
+                  items: const [
+                    DropdownMenuItem(
+                      value: '2400',
+                      child: Text('2400 (Varsayılan)'),
+                    ),
+                    DropdownMenuItem(value: '4800', child: Text('4800')),
+                    DropdownMenuItem(value: '9600', child: Text('9600')),
+                  ],
+                  onChanged: (v) => setState(() => _mbusBaudRate = v!),
+                  label: 'Baud Rate',
                 ),
-                DropdownMenuItem(value: '4800', child: Text('4800')),
-                DropdownMenuItem(value: '9600', child: Text('9600')),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final w = constraints.maxWidth;
+                    int cols = 2;
+                    if (w < 400) cols = 1;
+                    return GridView.count(
+                      crossAxisCount: cols,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 3,
+                      children: [
+                        _buildInfoCard(
+                          isDark,
+                          'Bağlantı',
+                          isDeviceConnected ? 'Bağlı' : 'Bağlantı Yok',
+                          isDeviceConnected
+                              ? Icons.check_circle
+                              : Icons.cancel_outlined,
+                          isDeviceConnected
+                              ? Colors.green
+                              : Colors.red.shade400,
+                        ),
+                        _buildInfoCard(
+                          isDark,
+                          'Port',
+                          portName,
+                          isDeviceConnected
+                              ? Icons.usb
+                              : Icons.usb_off_outlined,
+                          isDeviceConnected
+                              ? const Color(0xFF8B5CF6)
+                              : Colors.grey,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ],
-              onChanged: (v) => setState(() => _mbusBaudRate = v!),
-              label: 'Baud Rate',
             ),
             const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final w = constraints.maxWidth;
-                int cols = 2;
-                if (w < 400) cols = 1;
-                return GridView.count(
-                  crossAxisCount: cols,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 3,
-                  children: [
-                    _buildInfoCard(
-                      isDark,
-                      'Bağlantı',
-                      'Bağlı',
-                      Icons.check_circle,
-                      Colors.green,
-                    ),
-                    _buildInfoCard(
-                      isDark,
-                      'Port',
-                      'USB0',
-                      Icons.usb,
-                      const Color(0xFF8B5CF6),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
 
-        // Firebase
-        _buildSectionCard(
-          isDark: isDark,
-          title: 'Firebase Firestore',
-          icon: Icons.cloud,
-          children: [
-            _buildInfoCard(
-              isDark,
-              'Bölge',
-              'europe-west1',
-              Icons.public,
-              Colors.blue,
-            ),
-            const SizedBox(height: 12),
-            _buildToggleRow(
+            // Firebase
+            _buildSectionCard(
               isDark: isDark,
-              label: 'Çevrimdışı Mod',
-              description: 'İnternet bağlantısı olmadan yerel depolama',
-              value: _offlineMode,
-              onToggle: () => setState(() => _offlineMode = !_offlineMode),
+              title: 'Firebase Firestore',
+              icon: Icons.cloud,
+              children: [
+                _buildInfoCard(
+                  isDark,
+                  'Bölge',
+                  'europe-west1',
+                  Icons.public,
+                  Colors.blue,
+                ),
+                const SizedBox(height: 12),
+                _buildToggleRow(
+                  isDark: isDark,
+                  label: 'Çevrimdışı Mod',
+                  description: 'İnternet bağlantısı olmadan yerel depolama',
+                  value: _offlineMode,
+                  onToggle: () => setState(() => _offlineMode = !_offlineMode),
+                ),
+                const SizedBox(height: 12),
+                _buildToggleRow(
+                  isDark: isDark,
+                  label: 'Otomatik Tekrar Dene',
+                  description: 'Başarısız senkronizasyonlarda otomatik tekrar',
+                  value: _autoRetry,
+                  onToggle: () => setState(() => _autoRetry = !_autoRetry),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            _buildToggleRow(
-              isDark: isDark,
-              label: 'Otomatik Tekrar Dene',
-              description: 'Başarısız senkronizasyonlarda otomatik tekrar',
-              value: _autoRetry,
-              onToggle: () => setState(() => _autoRetry = !_autoRetry),
-            ),
+            const SizedBox(height: 24),
+            _buildSaveButton(isDark),
           ],
-        ),
-        const SizedBox(height: 24),
-        _buildSaveButton(isDark),
-      ],
+        );
+      },
     );
   }
 
@@ -656,18 +676,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              _buildDangerButton(
-                isDark,
-                Icons.refresh,
-                'Okumaları Sıfırla',
-                'Tüm yerel okuma kayıtları silinir',
-              ),
-              const SizedBox(height: 8),
-              _buildDangerButton(
-                isDark,
-                Icons.delete_forever,
-                'Tüm Verileri Temizle',
-                'Sayaç ve okuma verileri tamamen silinir',
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final tightWidth = constraints.maxWidth;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      SizedBox(
+                        width: tightWidth < 400
+                            ? tightWidth
+                            : (tightWidth - 8) / 2,
+                        child: _buildDangerButton(
+                          isDark,
+                          Icons.refresh,
+                          'Okumaları Sıfırla',
+                          'Tüm yerel okuma kayıtları silinir',
+                        ),
+                      ),
+                      SizedBox(
+                        width: tightWidth < 400
+                            ? tightWidth
+                            : (tightWidth - 8) / 2,
+                        child: _buildDangerButton(
+                          isDark,
+                          Icons.delete_forever,
+                          'Tüm Verileri Temizle',
+                          'Sayaç ve okuma verileri tamamen silinir',
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -711,28 +751,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'API Anahtarı',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'API Anahtarı',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.grey.shade900,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'AIzaS...8bF2k',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: 'monospace',
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade500,
+                        Text(
+                          'AIzaS...8bF2k',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -849,26 +893,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey.shade900,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
