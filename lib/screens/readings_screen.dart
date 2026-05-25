@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_data_provider.dart';
+import '../providers/device_provider.dart';
+import 'export_screen.dart';
 
 class ReadingsScreen extends StatefulWidget {
   const ReadingsScreen({super.key});
@@ -16,6 +18,32 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
   String _sortDir = 'desc'; // asc, desc
   int _currentPage = 1;
   static const int _perPage = 15;
+
+  void _handleExport(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ExportScreen()));
+  }
+
+  Future<void> _handleSync(BuildContext context) async {
+    final provider = context.read<AppDataProvider>();
+    if (provider is DeviceProvider) {
+      await provider.saveSession(immediate: true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veriler senkronize edildi.')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cloud modunda veriler zaten senkronize.'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +185,7 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
                           Icons.cloud_upload_outlined,
                           'Senkronize',
                           Colors.green,
-                          () {},
+                          () => _handleSync(context),
                         ),
                       ),
                       SizedBox(
@@ -167,7 +195,7 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
                           Icons.download_outlined,
                           'Dışa Aktar',
                           const Color(0xFF8B5CF6),
-                          () {},
+                          () => _handleExport(context),
                         ),
                       ),
                     ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/app_data_provider.dart';
 
 enum _SettingSection { general, connection, data, security }
 
@@ -40,6 +41,86 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _saved = false);
     });
+  }
+
+  void _handleClearReadings() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Okumaları Sıfırla'),
+        content: const Text(
+          'Tüm okuma kayıtları silinecek. Bu işlem geri alınamaz. Devam etmek istediğinize emin misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _performClearReadings();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sıfırla'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleClearAllData() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tüm Verileri Temizle'),
+        content: const Text(
+          'Tüm sayaç ve okuma verileri kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam etmek istediğinize emin misiniz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _performClearAllData();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Tümünü Temizle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _performClearReadings() {
+    final provider = context.read<AppDataProvider>();
+    if (provider is DeviceProvider) {
+      for (final m in provider.meterList) {
+        m.heatIndex = '';
+        m.waterIndex = '';
+        m.heatStatus = MeterStatus.pending;
+        m.waterStatus = MeterStatus.pending;
+        m.overallStatus = MeterStatus.pending;
+        m.readTime = null;
+      }
+      provider.saveSession(immediate: true);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Tüm okumalar sıfırlandı.')));
+    }
+  }
+
+  void _performClearAllData() {
+    final provider = context.read<AppDataProvider>();
+    if (provider is DeviceProvider) {
+      provider.clearMeters();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Tüm veriler temizlendi.')));
+    }
   }
 
   @override
@@ -295,6 +376,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 else if (w < 600)
                   cols = 2;
 
+                final isLightSelected =
+                    themeProvider.themeMode == ThemeMode.light;
+                final isDarkSelected =
+                    themeProvider.themeMode == ThemeMode.dark;
+                final isSystemSelected =
+                    themeProvider.themeMode == ThemeMode.system;
+
                 return GridView.count(
                   crossAxisCount: cols,
                   shrinkWrap: true,
@@ -312,11 +400,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Color(0xFFFBBF24),
                         Color(0xFFF97316),
                       ],
-                      isSelected: !themeProvider.isDarkMode,
-                      onTap: () {
-                        if (themeProvider.isDarkMode)
-                          themeProvider.toggleTheme();
-                      },
+                      isSelected: isLightSelected,
+                      onTap: () => themeProvider.setThemeMode(ThemeMode.light),
                     ),
                     _buildThemeOption(
                       isDark: isDark,
@@ -327,11 +412,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Color(0xFF6366F1),
                         Color(0xFF8B5CF6),
                       ],
-                      isSelected: themeProvider.isDarkMode,
-                      onTap: () {
-                        if (!themeProvider.isDarkMode)
-                          themeProvider.toggleTheme();
-                      },
+                      isSelected: isDarkSelected,
+                      onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
                     ),
                     _buildThemeOption(
                       isDark: isDark,
@@ -342,8 +424,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Color(0xFF9CA3AF),
                         Color(0xFF6B7280),
                       ],
-                      isSelected: false,
-                      onTap: () {},
+                      isSelected: isSystemSelected,
+                      onTap: () => themeProvider.setThemeMode(ThemeMode.system),
                     ),
                   ],
                 );
@@ -692,6 +774,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.refresh,
                           'Okumaları Sıfırla',
                           'Tüm yerel okuma kayıtları silinir',
+                          onTap: _handleClearReadings,
                         ),
                       ),
                       SizedBox(
@@ -703,6 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.delete_forever,
                           'Tüm Verileri Temizle',
                           'Sayaç ve okuma verileri tamamen silinir',
+                          onTap: _handleClearAllData,
                         ),
                       ),
                     ],
@@ -927,10 +1011,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool isDark,
     IconData icon,
     String title,
-    String description,
-  ) {
+    String description, {
+    required VoidCallback onTap,
+  }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(14),

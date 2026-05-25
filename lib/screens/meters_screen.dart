@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/meter_data.dart';
 import '../providers/app_data_provider.dart';
+import '../providers/device_provider.dart';
 
 class MetersScreen extends StatefulWidget {
   const MetersScreen({super.key});
@@ -14,6 +14,19 @@ class _MetersScreenState extends State<MetersScreen> {
   String _filterType = 'all'; // all, heat, water
   String _filterStatus = 'all'; // all, active, pending, error
   String _viewMode = 'list'; // list, grid
+
+  void _handleRefresh() {
+    final provider = context.read<AppDataProvider>();
+    if (provider is DeviceProvider) {
+      provider.retryFailedMeters();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yenileme yalnızca cihaz modunda kullanılabilir.'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +154,7 @@ class _MetersScreenState extends State<MetersScreen> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: _handleRefresh,
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Yenile'),
                         style: ElevatedButton.styleFrom(
