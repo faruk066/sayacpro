@@ -1413,7 +1413,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Dışa aktarma hatası: $e')));
+        ).showSnackBar(SnackBar(content: Text('Dışa aktarma işlemi başarısız oldu.')));
       }
     }
   }
@@ -1448,7 +1448,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Excel oluşturma hatası: $e')));
+        ).showSnackBar(SnackBar(content: Text('Excel oluşturma başarısız oldu.')));
       }
     }
   }

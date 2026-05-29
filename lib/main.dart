@@ -22,7 +22,7 @@ void main() async {
       )
     );
   } catch (e) {
-    debugPrint("Firebase init failed: $e");
+    debugPrint("Firebase init failed.");
   }
 
   runApp(

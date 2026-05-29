@@ -7,7 +7,6 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase_service.dart';
 import '../models/site_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../services/mbus/connection_status.dart';
 import '../services/mbus/mbus_interface.dart';
@@ -138,11 +137,12 @@ class DeviceProvider extends AppDataProvider {
         await _audioPlayer.play(AssetSource('audio/complete.wav'));
       }
     } catch (e) {
-      _addLog('Ses çalma hatası: $e');
+      _addLog('Ses çalma hatası oluştu.');
     }
   }
 
   void setSiteName(String value) {
+    if (_siteName == value) return;
     _siteName = value;
     _updateFirebaseSiteData();
     notifyListeners();
@@ -163,46 +163,54 @@ class DeviceProvider extends AppDataProvider {
           .length,
     );
     _firebaseService.updateSiteData(siteId, data).catchError((e) {
-      if (kDebugMode) debugPrint("Firebase sync error: $e");
+      if (kDebugMode) debugPrint("Firebase sync error.");
     });
   }
 
   void setBaudRate(int value) {
+    if (_baudRate == value) return;
     _baudRate = value;
     notifyListeners();
   }
 
   void setSelectedCommand(MBusCommandOption cmd) {
+    if (_selectedCommand == cmd) return;
     _selectedCommand = cmd;
     notifyListeners();
   }
 
   void setHeatSecondaryIds(String value) {
+    if (_heatSecondaryIds == value) return;
     _heatSecondaryIds = value;
     notifyListeners();
   }
 
   void setWaterSecondaryIds(String value) {
+    if (_waterSecondaryIds == value) return;
     _waterSecondaryIds = value;
     notifyListeners();
   }
 
   void setDaireIds(String value) {
+    if (_daireIds == value) return;
     _daireIds = value;
     notifyListeners();
   }
 
   void setPrimaryStart(int value) {
+    if (_primaryStart == value) return;
     _primaryStart = value;
     notifyListeners();
   }
 
   void setPrimaryEnd(int value) {
+    if (_primaryEnd == value) return;
     _primaryEnd = value;
     notifyListeners();
   }
 
   void setReadingMode(ReadingMode value) {
+    if (_selectedReadingMode == value) return;
     _selectedReadingMode = value;
     _updateFirebaseSiteData();
     notifyListeners();
@@ -251,7 +259,7 @@ class DeviceProvider extends AppDataProvider {
       }
       notifyListeners();
     } catch (e) {
-      _addLog('⚠️ Cihaz tarama hatası: $e');
+      _addLog('⚠️ Cihaz tarama hatası oluştu.');
     }
   }
 
@@ -286,7 +294,7 @@ class DeviceProvider extends AppDataProvider {
       }
     } catch (e) {
       _setStatus(ConnectionStatus.error);
-      _addLog('❌ Hata: $e');
+      _addLog('❌ Bir hata oluştu.');
     }
   }
 
@@ -381,7 +389,7 @@ class DeviceProvider extends AppDataProvider {
 
             if (targetSerial.isNotEmpty) {
               _activeIndex = i;
-              _currentReadingFlat = daire.toString();
+              _currentReadingFlat = daire is String ? daire : daire.toString();
               targetSerial = targetSerial.padLeft(8, '0');
               _expectedDaireNo[targetSerial] = daire;
 
@@ -394,7 +402,7 @@ class DeviceProvider extends AppDataProvider {
               bool success = await _readSingleSecondary(targetSerial);
               if (!success) {
                 _handleFailedRead(
-                  daire.toString(),
+                  daire is String ? daire : daire.toString(),
                   targetSerial,
                   MeterType.heat,
                   i < waterTargets.length ? waterTargets[i] : '',
@@ -410,7 +418,7 @@ class DeviceProvider extends AppDataProvider {
               }
             } else if (i < heatTargets.length) {
               _handleFailedRead(
-                daire.toString(),
+                daire is String ? daire : daire.toString(),
                 '',
                 MeterType.heat,
                 i < waterTargets.length ? waterTargets[i] : '',
@@ -439,7 +447,7 @@ class DeviceProvider extends AppDataProvider {
 
             if (targetSerial.isNotEmpty) {
               _activeIndex = i;
-              _currentReadingFlat = daire.toString();
+              _currentReadingFlat = daire is String ? daire : daire.toString();
               targetSerial = targetSerial.padLeft(8, '0');
               _expectedDaireNo[targetSerial] = daire;
 
@@ -452,7 +460,7 @@ class DeviceProvider extends AppDataProvider {
               bool success = await _readSingleSecondary(targetSerial);
               if (!success) {
                 _handleFailedRead(
-                  daire.toString(),
+                  daire is String ? daire : daire.toString(),
                   targetSerial,
                   MeterType.water,
                   i < heatTargets.length ? heatTargets[i] : '',
@@ -467,7 +475,7 @@ class DeviceProvider extends AppDataProvider {
               }
             } else if (i < waterTargets.length) {
               _handleFailedRead(
-                daire.toString(),
+                daire is String ? daire : daire.toString(),
                 '',
                 MeterType.water,
                 i < heatTargets.length ? heatTargets[i] : '',
@@ -479,7 +487,7 @@ class DeviceProvider extends AppDataProvider {
           if (_isStopped) break;
         }
       } catch (e) {
-        _addLog('❌ Toplu okuma hatası: $e');
+        _addLog('❌ Toplu okuma hatası oluştu.');
       } finally {
         if (!_isStopped) {
           _playSound('complete');
@@ -519,7 +527,7 @@ class DeviceProvider extends AppDataProvider {
           currentCount++;
         }
       } catch (e) {
-        _addLog('❌ Toplu okuma hatası: $e');
+        _addLog('❌ Toplu okuma hatası oluştu.');
       } finally {
         _isReading = false;
         _readingStatus = 'Okuma Tamamlandı';
@@ -547,7 +555,7 @@ class DeviceProvider extends AppDataProvider {
         }
       });
     } catch (e) {
-      _addLog('❌ Gönderme hatası: $e');
+      _addLog('❌ Gönderme hatası oluştu.');
       _isReading = false;
       notifyListeners();
     }
@@ -617,7 +625,7 @@ class DeviceProvider extends AppDataProvider {
         }
       }
     } catch (e) {
-      _addLog('❌ Tekrar okuma hatası: $e');
+      _addLog('❌ Tekrar okuma hatası oluştu.');
     } finally {
       if (!_isStopped) {
         _playSound('complete');
@@ -654,7 +662,7 @@ class DeviceProvider extends AppDataProvider {
       }
       return false;
     } catch (e) {
-      _addLog('❌ Excel içe aktarma hatası: $e');
+      _addLog('❌ Excel içe aktarma hatası oluştu.');
       return false;
     }
   }
@@ -778,7 +786,7 @@ class DeviceProvider extends AppDataProvider {
 
       return await _readCompleter!.future;
     } catch (e) {
-      _addLog('❌ Hata ($targetSerial): $e');
+      _addLog('❌ Hata ($targetSerial)');
       if (!_readCompleter!.isCompleted) {
         _readCompleter!.complete(false);
       }
@@ -828,7 +836,7 @@ class DeviceProvider extends AppDataProvider {
 
       return await _readCompleter!.future;
     } catch (e) {
-      _addLog('❌ Hata (Adres $addr): $e');
+      _addLog('❌ Hata (Adres $addr)');
       if (!_readCompleter!.isCompleted) {
         _readCompleter!.complete(false);
       }
@@ -869,7 +877,7 @@ class DeviceProvider extends AppDataProvider {
       _firebaseService.updateMeterData(siteId, key, _meters[key]!).catchError((
         e,
       ) {
-        if (kDebugMode) debugPrint("Firebase sync error: $e");
+        if (kDebugMode) debugPrint("Firebase sync error.");
       });
     }
     notifyListeners();
@@ -882,7 +890,7 @@ class DeviceProvider extends AppDataProvider {
         _processBuffer();
       },
       onError: (e) {
-        _addLog('❌ Veri hatası: $e');
+        _addLog('❌ Veri hatası oluştu.');
         _isReading = false;
         notifyListeners();
       },
@@ -995,7 +1003,7 @@ class DeviceProvider extends AppDataProvider {
                   _firebaseService
                       .updateMeterData(siteId, flatNo, _meters[flatNo]!)
                       .catchError((e) {
-                        if (kDebugMode) debugPrint("Firebase sync error: $e");
+                        if (kDebugMode) debugPrint("Firebase sync error.");
                       });
                 }
 
@@ -1007,7 +1015,7 @@ class DeviceProvider extends AppDataProvider {
                 }
               }
             } catch (e) {
-              _addLog('❌ Parse hatası: $e');
+              _addLog('❌ Parse hatası oluştu.');
             }
           } else {
             _addLog(
@@ -1081,9 +1089,8 @@ class DeviceProvider extends AppDataProvider {
     });
   }
 
-  SharedPreferences? _prefs;
-  Future<SharedPreferences> get _getPrefs async =>
-      _prefs ??= await SharedPreferences.getInstance();
+
+
 
   Future<void> _performSave() async {
     try {
@@ -1110,7 +1117,7 @@ class DeviceProvider extends AppDataProvider {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ Oturum kaydedilemedi: $e');
+        debugPrint('⚠️ Oturum kaydedilemedi.');
       }
     }
   }
@@ -1154,7 +1161,7 @@ class DeviceProvider extends AppDataProvider {
       _addLog('📂 Eski oturum geri yüklendi.');
       notifyListeners();
     } catch (e) {
-      _addLog('⚠️ Oturum yüklenirken hata: $e');
+      _addLog('⚠️ Oturum yüklenirken hata oluştu.');
     }
   }
 
@@ -1164,7 +1171,7 @@ class DeviceProvider extends AppDataProvider {
       await secureStorage.delete(key: 'sayac_pro_session');
       _addLog('🗑️ Oturum verileri temizlendi.');
     } catch (e) {
-      _addLog('⚠️ Oturum verileri temizlenemedi: $e');
+      _addLog('⚠️ Oturum verileri temizlenemedi.');
     }
   }
 
@@ -1208,7 +1215,7 @@ class DeviceProvider extends AppDataProvider {
       _firebaseService
           .updateMeterData(siteId, flatNo, _meters[flatNo]!)
           .catchError((e) {
-            if (kDebugMode) debugPrint("Firebase sync error: $e");
+            if (kDebugMode) debugPrint("Firebase sync error.");
           });
     }
     notifyListeners();
@@ -1235,6 +1242,7 @@ class DeviceProvider extends AppDataProvider {
     notifyListeners();
   }
 
+  @override
   void dispose() {
     _audioPlayer.dispose();
     _timeoutTimer?.cancel();

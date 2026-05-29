@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
+  SharedPreferences? _prefs;
+  Future<SharedPreferences> get _getPrefs async => _prefs ??= await SharedPreferences.getInstance();
+
   static const String _themeKey = "theme_mode";
   ThemeMode _themeMode = ThemeMode.dark;
 
@@ -12,7 +15,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs;
     final themeIndex = prefs.getInt(_themeKey);
     if (themeIndex != null) {
       _themeMode = ThemeMode.values[themeIndex];
@@ -25,7 +28,7 @@ class ThemeProvider extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs;
     await prefs.setInt(_themeKey, _themeMode.index);
   }
 
@@ -37,7 +40,7 @@ class ThemeProvider extends ChangeNotifier {
     }
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _getPrefs;
     await prefs.setInt(_themeKey, _themeMode.index);
   }
 
