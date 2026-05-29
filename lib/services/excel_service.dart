@@ -24,7 +24,7 @@ class ExcelService {
         }
       }
     } catch (e) {
-      debugPrint("Excel okuma hatası: $e");
+      debugPrint("Excel okuma hatası oluştu.");
     }
     return null;
   }

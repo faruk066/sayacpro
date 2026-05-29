@@ -113,7 +113,7 @@ class _ExportScreenState extends State<ExportScreen> {
         setState(() {
           _isExporting = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Bir hata oluştu.')));
       }
     }
   }
