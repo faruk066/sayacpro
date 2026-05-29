@@ -18,7 +18,7 @@ dependencies:
 
   # Durum yönetimi
   share_plus: ^12.0.2
-  file_picker: ^8.1.7   
+  file_picker: ^11.0.2   
   provider: ^6.1.2
   path_provider: ^2.1.5
   excel: ^4.0.6
