@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/theme_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/app_data_provider.dart';
@@ -14,6 +15,29 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _language = prefs.getString('language') ?? 'tr';
+      _autoSync = prefs.getBool('autoSync') ?? true;
+      _soundEffects = prefs.getBool('soundEffects') ?? false;
+      _vibration = prefs.getBool('vibration') ?? true;
+      _mbusBaudRate = prefs.getString('mbusBaudRate') ?? '2400';
+      _offlineMode = prefs.getBool('offlineMode') ?? false;
+      _autoRetry = prefs.getBool('autoRetry') ?? true;
+      _clearOnLogout = prefs.getBool('clearOnLogout') ?? true;
+      _biometric = prefs.getBool('biometric') ?? true;
+      _autoLock = prefs.getBool('autoLock') ?? true;
+      _encryptLocal = prefs.getBool('encryptLocal') ?? true;
+    });
+  }
+
   _SettingSection _activeSection = _SettingSection.general;
   bool _saved = false;
 
@@ -36,7 +60,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoLock = true;
   bool _encryptLocal = true;
 
-  void _handleSave() {
+  void _handleSave() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', _language);
+    await prefs.setBool('autoSync', _autoSync);
+    await prefs.setBool('soundEffects', _soundEffects);
+    await prefs.setBool('vibration', _vibration);
+    await prefs.setString('mbusBaudRate', _mbusBaudRate);
+    await prefs.setBool('offlineMode', _offlineMode);
+    await prefs.setBool('autoRetry', _autoRetry);
+    await prefs.setBool('clearOnLogout', _clearOnLogout);
+    await prefs.setBool('biometric', _biometric);
+    await prefs.setBool('autoLock', _autoLock);
+    await prefs.setBool('encryptLocal', _encryptLocal);
+
     setState(() => _saved = true);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _saved = false);

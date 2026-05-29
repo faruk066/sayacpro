@@ -52,7 +52,23 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
 
     return Consumer<AppDataProvider>(
       builder: (context, provider, child) {
-        final meters = provider.meterList;
+        final rawMeters = provider.meterList;
+
+        final meters = rawMeters.where((m) {
+          if (_filterType == 'heat') {
+            if (m.type.name != 'heat' && m.heatMeterId.isEmpty) return false;
+          } else if (_filterType == 'water') {
+            if (m.type.name != 'water' && m.waterMeterId.isEmpty) return false;
+          }
+
+          final isSuccess = m.overallStatus.name == 'success';
+
+
+          if (_filterSynced == 'synced' && !isSuccess) return false;
+          if (_filterSynced == 'pending' && isSuccess) return false;
+
+          return true;
+        }).toList();
 
         // Convert meters to "readings" representation
         List<_ReadingRow> allReadings = [];
